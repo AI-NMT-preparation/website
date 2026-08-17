@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bolest.ai</title>
 <link rel="stylesheet" href="style.css">
+<!-- Google Identity Services (реальна авторизація через Google) -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -23,10 +25,12 @@
       </svg>
       <span>Увійти через Google</span>
     </button>
+
+    <p class="auth-note" id="auth-note"></p>
   </div>
 </div>
 
-<!-- ==================== ЕКРАН 2: НАЛАШТУВАННЯ ПРОФІЛЮ ==================== -->
+<!-- ==================== ЕКРАН 2: НАЛАШТУВАННЯ ПРОФІЛЮ (тільки для нового акаунту) ==================== -->
 <div id="screen-setup" class="screen">
   <div class="auth-card setup-card">
     <h2>Налаштування профілю</h2>
@@ -37,7 +41,7 @@
         <img id="avatar-img" src="" alt="Фото профілю" style="display:none">
       </label>
       <input type="file" id="avatar-input" accept="image/*" hidden>
-      <p class="hint">Фото профілю (не обов'язково)</p>
+      <p class="hint">Фото профілю (можна залишити те, що з Google, або обрати своє)</p>
     </div>
 
     <label class="field-label" for="nickname-input">Нікнейм</label>
@@ -74,28 +78,28 @@
           <button class="collapse-btn" type="button" aria-label="Згорнути">^</button>
         </div>
 
-        <div class="subject-row">
+        <div class="subject-row" data-subject="math">
           <div class="subject-top">
             <span class="subject-name">Математика</span>
-            <span class="subject-score">700 <span class="score-diff">▲50</span></span>
+            <span class="subject-score" id="score-math">—</span>
           </div>
-          <div class="subject-range">660–740</div>
+          <div class="subject-range" id="range-math">Ще не складали</div>
         </div>
 
-        <div class="subject-row">
+        <div class="subject-row" data-subject="ukrainian">
           <div class="subject-top">
             <span class="subject-name">Українська мова</span>
-            <span class="subject-score">520 <span class="score-diff">▲50</span></span>
+            <span class="subject-score" id="score-ukrainian">—</span>
           </div>
-          <div class="subject-range">460–590</div>
+          <div class="subject-range" id="range-ukrainian">Ще не складали</div>
         </div>
 
-        <div class="subject-row">
+        <div class="subject-row" data-subject="history">
           <div class="subject-top">
             <span class="subject-name">Історія України</span>
-            <span class="subject-score">610 <span class="score-diff">▲30</span></span>
+            <span class="subject-score" id="score-history">—</span>
           </div>
-          <div class="subject-range">560–650</div>
+          <div class="subject-range" id="range-history">Ще не складали</div>
         </div>
       </div>
     </aside>
@@ -116,10 +120,10 @@
 
       <div class="level-block">
         <div class="level-header">
-          <span class="level-title">Рівень 5</span>
-          <span class="level-points">182/220</span>
+          <span class="level-title" id="level-title">Рівень 1</span>
+          <span class="level-points" id="level-points">0/100</span>
         </div>
-        <div class="xp-bar"><div class="xp-fill" style="width:82%"></div></div>
+        <div class="xp-bar"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
       </div>
 
       <div class="streak-block">
@@ -185,13 +189,20 @@
       </div>
 
       <div class="action-buttons">
-        <button class="action-btn" type="button"><span class="plus">+</span> Навчальна сесія</button>
-        <button class="action-btn" type="button">Пробний тест</button>
-        <button class="action-btn" type="button">Словник</button>
-        <button class="action-btn" type="button">Лабораторія повторення</button>
+        <button class="action-btn" type="button" id="btn-session"><span class="plus">+</span> Навчальна сесія</button>
+        <button class="action-btn" type="button" id="btn-test">Пробний тест</button>
+        <button class="action-btn wide" type="button" id="btn-review">Лабораторія повторення</button>
       </div>
 
     </aside>
+  </div>
+</div>
+
+<!-- ==================== МОДАЛЬНЕ ВІКНО (навчальна сесія / пробний тест) ==================== -->
+<div id="modal-overlay" class="modal-overlay">
+  <div class="modal-box">
+    <button id="modal-close" class="modal-close" type="button" aria-label="Закрити">×</button>
+    <div id="modal-content"></div>
   </div>
 </div>
 

@@ -82,6 +82,18 @@ html, body {
   transform: translateY(-1px);
   box-shadow: 0 6px 18px rgba(255,255,255,0.15);
 }
+.google-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.auth-note {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  min-height: 14px;
+}
 
 /* ---------- Екран налаштування профілю ---------- */
 .setup-card { max-width: 420px; text-align: left; }
@@ -457,6 +469,9 @@ html, body {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+.action-btn.wide {
+  grid-column: 1 / -1;
+}
 
 .action-btn {
   position: relative;
@@ -489,6 +504,100 @@ html, body {
 }
 .action-btn:hover::before { width: 100%; }
 .action-btn .plus { color: var(--accent); font-weight: 800; }
+
+/* ==================== МОДАЛЬНЕ ВІКНО ==================== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-box {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+}
+.modal-close:hover { color: var(--text-main); }
+
+.modal-content h3 {
+  margin: 0 0 18px;
+  font-size: 18px;
+}
+
+.modal-field-label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 14px 0 6px;
+}
+
+.modal-content select,
+.modal-content input[type="number"] {
+  width: 100%;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.modal-content select:focus,
+.modal-content input[type="number"]:focus {
+  border-color: var(--accent);
+}
+
+.modal-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 6px 0 0;
+}
+
+.modal-submit-btn {
+  width: 100%;
+  margin-top: 22px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.modal-submit-btn:hover { background: var(--accent-hover); }
+
+.modal-result {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
 
 /* ==================== АДАПТИВНІСТЬ ==================== */
 @media (max-width: 1100px) {
