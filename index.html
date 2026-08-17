@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolest.ai</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ==================== ЕКРАН 1: ВХІД ЧЕРЕЗ GOOGLE ==================== -->
+<div id="screen-login" class="screen active">
+  <div class="auth-card">
+    <h1 class="logo-text">Bolest<span class="accent-text">.ai</span></h1>
+    <p class="auth-subtitle">Увійдіть, щоб розпочати навчання</p>
+
+    <button id="google-login-btn" class="google-btn" type="button">
+      <svg class="google-icon" viewBox="0 0 48 48" width="20" height="20">
+        <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/>
+        <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.1 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/>
+        <path fill="#4CAF50" d="M24 44c5.2 0 10-2 13.6-5.2l-6.3-5.3C29.3 35.4 26.8 36 24 36c-5.3 0-9.7-3.1-11.3-7.6l-6.5 5C9.6 39.7 16.3 44 24 44z"/>
+        <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.7l6.3 5.3C40.8 36 44 30.6 44 24c0-1.3-.1-2.7-.4-3.5z"/>
+      </svg>
+      <span>Увійти через Google</span>
+    </button>
+  </div>
+</div>
+
+<!-- ==================== ЕКРАН 2: НАЛАШТУВАННЯ ПРОФІЛЮ ==================== -->
+<div id="screen-setup" class="screen">
+  <div class="auth-card setup-card">
+    <h2>Налаштування профілю</h2>
+
+    <div class="avatar-upload">
+      <label for="avatar-input" class="avatar-preview" id="avatar-preview">
+        <span id="avatar-placeholder">+</span>
+        <img id="avatar-img" src="" alt="Фото профілю" style="display:none">
+      </label>
+      <input type="file" id="avatar-input" accept="image/*" hidden>
+      <p class="hint">Фото профілю (не обов'язково)</p>
+    </div>
+
+    <label class="field-label" for="nickname-input">Нікнейм</label>
+    <input type="text" id="nickname-input" placeholder="Введіть нікнейм" maxlength="20">
+
+    <label class="field-label" for="description-input">Опис профілю</label>
+    <div class="description-row">
+      <textarea id="description-input" placeholder="Розкажіть трохи про себе..." maxlength="150"></textarea>
+      <button id="random-quote-btn" class="secondary-btn" type="button">Випадкова цитата</button>
+    </div>
+
+    <button id="finish-setup-btn" class="primary-btn" type="button">Почати навчання</button>
+  </div>
+</div>
+
+<!-- ==================== ЕКРАН 3: ГОЛОВНА СТОРІНКА ==================== -->
+<div id="screen-dashboard" class="screen">
+  <div class="app-layout">
+
+    <!-- ЛІВА КОЛОНКА -->
+    <aside class="sidebar-left">
+      <div class="logo">Bolest<span class="accent-text">.ai</span></div>
+
+      <nav class="main-nav">
+        <button class="nav-btn active" data-nav="tutor"><span>Репетитор</span></button>
+        <button class="nav-btn" data-nav="analytics"><span>Аналітика</span></button>
+        <button class="nav-btn" data-nav="profile"><span>Профіль</span></button>
+        <button class="nav-btn" data-nav="leaderboard"><span>Лідерборд</span></button>
+      </nav>
+
+      <div class="score-block">
+        <div class="score-header">
+          <span>Оцінка балів</span>
+          <button class="collapse-btn" type="button" aria-label="Згорнути">^</button>
+        </div>
+
+        <div class="subject-row">
+          <div class="subject-top">
+            <span class="subject-name">Математика</span>
+            <span class="subject-score">700 <span class="score-diff">▲50</span></span>
+          </div>
+          <div class="subject-range">660–740</div>
+        </div>
+
+        <div class="subject-row">
+          <div class="subject-top">
+            <span class="subject-name">Українська мова</span>
+            <span class="subject-score">520 <span class="score-diff">▲50</span></span>
+          </div>
+          <div class="subject-range">460–590</div>
+        </div>
+
+        <div class="subject-row">
+          <div class="subject-top">
+            <span class="subject-name">Історія України</span>
+            <span class="subject-score">610 <span class="score-diff">▲30</span></span>
+          </div>
+          <div class="subject-range">560–650</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ЦЕНТРАЛЬНА КОЛОНКА -->
+    <main class="content-center">
+      <div class="project-info">
+        <h2>Про проєкт Bolest.ai</h2>
+        <div class="project-text-placeholder">
+          <!-- TODO: тут буде текст про проєкт — мета створення, для кого він, які можливості надає тощо -->
+          <p class="placeholder-note">Тут буде розміщено інформацію про проєкт Bolest.ai.</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- ПРАВА КОЛОНКА -->
+    <aside class="sidebar-right">
+
+      <div class="level-block">
+        <div class="level-header">
+          <span class="level-title">Рівень 5</span>
+          <span class="level-points">182/220</span>
+        </div>
+        <div class="xp-bar"><div class="xp-fill" style="width:82%"></div></div>
+      </div>
+
+      <div class="streak-block">
+        <p class="streak-title">0 днів поспіль навчання</p>
+        <div class="streak-days">
+          <div class="day-cell">Пн</div>
+          <div class="day-cell">Вт</div>
+          <div class="day-cell">Ср</div>
+          <div class="day-cell">Чт</div>
+          <div class="day-cell">Пт</div>
+          <div class="day-cell">Сб</div>
+          <div class="day-cell">Нд</div>
+        </div>
+      </div>
+
+      <div class="stats-block">
+        <div class="stats-tabs">
+          <button class="tab active" type="button" data-tab="today">Сьогодні</button>
+          <button class="tab" type="button" data-tab="all-time">За весь час</button>
+        </div>
+        <div class="stats-numbers">
+          <div class="stat-item">
+            <strong>0</strong>
+            <span>Питання</span>
+          </div>
+          <div class="stat-item">
+            <strong>0%</strong>
+            <span>Точність</span>
+          </div>
+          <div class="stat-item">
+            <strong>0%</strong>
+            <span>Складність</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="priorities-block">
+        <h3>Пріоритети навчального плану</h3>
+
+        <div class="session-item">
+          <div class="session-label">Навчальна сесія</div>
+          <div class="session-topic topic-pink">Тема 1</div>
+          <div class="session-progress">0/10</div>
+        </div>
+
+        <div class="session-item">
+          <div class="session-label">Навчальна сесія</div>
+          <div class="session-topic topic-yellow">Тема 2</div>
+          <div class="session-progress">0/10</div>
+        </div>
+
+        <div class="session-item">
+          <div class="session-label">Навчальна сесія</div>
+          <div class="session-topic topic-green">Тема 3</div>
+          <div class="session-progress">0/10</div>
+        </div>
+
+        <div class="session-item">
+          <div class="session-label">Навчальна сесія</div>
+          <div class="session-topic topic-default">Тема 4</div>
+          <div class="session-progress">0/10</div>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="action-btn" type="button"><span class="plus">+</span> Навчальна сесія</button>
+        <button class="action-btn" type="button">Пробний тест</button>
+        <button class="action-btn" type="button">Словник</button>
+        <button class="action-btn" type="button">Лабораторія повторення</button>
+      </div>
+
+    </aside>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
