@@ -21,6 +21,10 @@ if (btnHint1) {
   };
 }
 
+if (res.data.user) {
+  window.location.href = "dashboard.html";
+}
+
 const btnExplain = document.getElementById("btn-ai-explain");
 if (btnExplain) {
   btnExplain.onclick = () => {
