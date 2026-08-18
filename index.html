@@ -1,333 +1,326 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bolest.ai — Платформа Підготовки</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolest.ai — Підготовка до НМТ</title>
+<link rel="stylesheet" href="style.css">
+<!-- Подключение Supabase JS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-  <!-- ==================== ЕКРАН АВТОРИЗАЦІЇ ==================== -->
-  <div id="screen-login" class="screen active">
-    <div class="auth-card">
-      <h1 class="logo-text">Bolest<span class="accent-text">.ai</span></h1>
-      <p class="auth-subtitle">Вхід до системи</p>
-      
-      <form id="auth-form" onsubmit="return false;">
-        <div style="margin-bottom: 12px;">
-          <input type="text" id="username-input" placeholder="Логін або Email" required>
-        </div>
-        <div style="margin-bottom: 16px;">
-          <input type="password" id="password-input" placeholder="Пароль" required>
-        </div>
-        <button type="submit" id="auth-submit-btn" class="primary-btn">Увійти</button>
-      </form>
+<!-- ==================== ЕКРАН 1: ВХІД / РЕЄСТРАЦІЯ ==================== -->
+<div id="screen-login" class="screen active">
+  <div class="auth-card">
+    <h1 class="logo-text">Bolest<span class="accent-text">.ai</span></h1>
+    <p class="auth-subtitle" id="auth-mode-subtitle">Увійдіть у свій акаунт</p>
 
-      <p class="auth-switch">
-        Немає акаунту? <button type="button" class="link-btn" id="auth-switch-btn">Зареєструватися</button>
-      </p>
-      <div id="auth-note" class="auth-note"></div>
-    </div>
+    <label class="field-label" for="email-input">Email</label>
+    <input type="email" id="email-input" placeholder="example@mail.com" autocomplete="email">
+
+    <label class="field-label" for="password-input">Пароль</label>
+    <input type="password" id="password-input" placeholder="Введіть пароль" autocomplete="current-password">
+
+    <button id="auth-submit-btn" class="primary-btn" type="button">Увійти</button>
+
+    <p class="auth-switch">
+      <span id="auth-switch-text">Немає акаунту?</span>
+      <button id="auth-switch-btn" class="link-btn" type="button">Зареєструватися</button>
+    </p>
+
+    <p class="auth-note" id="auth-note"></p>
   </div>
+</div>
 
-  <!-- ==================== ЕКРАН НАЛАШТУВАННЯ ПРОФІЛЮ ==================== -->
-  <div id="screen-setup" class="screen">
-    <div class="auth-card setup-card">
-      <h2>Налаштування профілю</h2>
-      
-      <div class="avatar-upload">
-        <label for="avatar-file-input" class="avatar-preview">
-          <img id="avatar-preview-img" src="" alt="Avatar" style="display:none;">
-          <span id="avatar-placeholder">+</span>
-        </label>
-        <input type="file" id="avatar-file-input" accept="image/*" style="display:none;">
-        <span class="hint">Завантажте аватар</span>
+<!-- ==================== ЕКРАН 2: НАЛАШТУВАННЯ ПРОФІЛЮ (тільки для нового акаунту) ==================== -->
+<div id="screen-setup" class="screen">
+  <div class="auth-card setup-card">
+    <h2>Налаштування профілю</h2>
+
+    <div class="avatar-upload">
+      <label for="avatar-input" class="avatar-preview" id="avatar-preview">
+        <span id="avatar-placeholder">+</span>
+        <img id="avatar-img" src="" alt="Фото профілю" style="display:none">
+      </label>
+      <input type="file" id="avatar-input" accept="image/*" hidden>
+      <p class="hint">Фото профілю (не обов'язково)</p>
+    </div>
+
+    <label class="field-label" for="nickname-input">Нікнейм</label>
+    <input type="text" id="nickname-input" placeholder="Введіть нікнейм" maxlength="20">
+
+    <label class="field-label" for="description-input">Опис профілю</label>
+    <div class="description-row">
+      <textarea id="description-input" placeholder="Розкажіть трохи про себе..." maxlength="150"></textarea>
+      <button id="random-quote-btn" class="secondary-btn" type="button">Випадкова цитата</button>
+    </div>
+
+    <button id="finish-setup-btn" class="primary-btn" type="button">Почати навчання</button>
+  </div>
+</div>
+
+<!-- ==================== ЕКРАН 3: ГОЛОВНА СТОРІНКА ==================== -->
+<div id="screen-dashboard" class="screen">
+  <div class="app-layout">
+
+    <!-- ЛІВА КОЛОНКА -->
+    <aside class="sidebar-left">
+      <div class="logo">Bolest<span class="accent-text">.ai</span></div>
+
+      <nav class="main-nav">
+        <button class="nav-btn active" data-nav="tutor"><span>Репетитор</span></button>
+        <button class="nav-btn" data-nav="analytics"><span>Аналітика</span></button>
+        <button class="nav-btn" data-nav="profile"><span>Профіль</span></button>
+        <button class="nav-btn" data-nav="leaderboard"><span>Лідерборд</span></button>
+      </nav>
+
+      <div class="score-block">
+        <div class="score-header">
+          <span>Оцінка балів</span>
+          <button class="collapse-btn" type="button" aria-label="Згорнути">^</button>
+        </div>
+
+        <div class="subject-row" data-subject="math">
+          <div class="subject-top">
+            <span class="subject-name">Математика</span>
+            <span class="subject-score" id="score-math">—</span>
+          </div>
+          <div class="subject-range" id="range-math">Ще не складали</div>
+        </div>
+
+        <div class="subject-row" data-subject="ukrainian">
+          <div class="subject-top">
+            <span class="subject-name">Українська мова</span>
+            <span class="subject-score" id="score-ukrainian">—</span>
+          </div>
+          <div class="subject-range" id="range-ukrainian">Ще не складали</div>
+        </div>
+
+        <div class="subject-row" data-subject="history">
+          <div class="subject-top">
+            <span class="subject-name">Історія України</span>
+            <span class="subject-score" id="score-history">—</span>
+          </div>
+          <div class="subject-range" id="range-history">Ще не складали</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ЦЕНТРАЛЬНА КОЛОНКА -->
+    <main class="content-center">
+
+      <div id="view-tutor" class="content-view active">
+        <div class="project-info">
+          <h2>Про проєкт Bolest.ai</h2>
+          <div class="project-text-placeholder">
+            <p class="placeholder-note">Інтерактивна платформа підготовки до НМТ з використанням штучного інтелекту.</p>
+          </div>
+        </div>
       </div>
 
-      <label class="field-label" for="nickname-input">Нікнейм</label>
-      <input type="text" id="nickname-input" placeholder="Ваш нікнейм">
+      <div id="view-analytics" class="content-view">
+        <h2>Аналітика</h2>
 
-      <div class="description-row" style="margin-top: 12px;">
-        <label class="field-label" for="description-input">Про себе</label>
-        <textarea id="description-input" placeholder="Розкажіть про свої цілі..."></textarea>
-        <button type="button" id="ai-gen-btn" class="secondary-btn">✨ Згенерувати AI</button>
+        <div class="analytics-columns">
+          <div class="analytics-col" data-subject="math">
+            <h3 class="analytics-col-title dot-math">Математика</h3>
+            <div class="analytics-stat">
+              <strong id="an-math-questions">0</strong>
+              <span>Питань розв'язано</span>
+            </div>
+            <div class="analytics-stat">
+              <strong id="an-math-accuracy">0%</strong>
+              <span>Точність відповідей</span>
+            </div>
+          </div>
+
+          <div class="analytics-col" data-subject="ukrainian">
+            <h3 class="analytics-col-title dot-ukrainian">Українська мова</h3>
+            <div class="analytics-stat">
+              <strong id="an-ukrainian-questions">0</strong>
+              <span>Питань розв'язано</span>
+            </div>
+            <div class="analytics-stat">
+              <strong id="an-ukrainian-accuracy">0%</strong>
+              <span>Точність відповідей</span>
+            </div>
+          </div>
+
+          <div class="analytics-col" data-subject="history">
+            <h3 class="analytics-col-title dot-history">Історія України</h3>
+            <div class="analytics-stat">
+              <strong id="an-history-questions">0</strong>
+              <span>Питань розв'язано</span>
+            </div>
+            <div class="analytics-stat">
+              <strong id="an-history-accuracy">0%</strong>
+              <span>Точність відповідей</span>
+            </div>
+          </div>
+        </div>
+
+        <table class="analytics-table">
+          <thead>
+            <tr>
+              <th>Предмет</th>
+              <th>Поточний бал (100–200)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="legend-dot dot-math"></span>Математика</td>
+              <td id="an-table-math">—</td>
+            </tr>
+            <tr>
+              <td><span class="legend-dot dot-ukrainian"></span>Українська мова</td>
+              <td id="an-table-ukrainian">—</td>
+            </tr>
+            <tr>
+              <td><span class="legend-dot dot-history"></span>Історія України</td>
+              <td id="an-table-history">—</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="analytics-chart-block">
+          <h3>Динаміка результатів пробних тестів</h3>
+          <svg id="analytics-chart" viewBox="0 0 640 280" preserveAspectRatio="none"></svg>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-dot dot-math"></span>Математика</span>
+            <span class="legend-item"><span class="legend-dot dot-ukrainian"></span>Українська мова</span>
+            <span class="legend-item"><span class="legend-dot dot-history"></span>Історія України</span>
+          </div>
+          <p class="chart-empty" id="chart-empty-note">Ще немає результатів пробних тестів — складіть перший тест, щоб побачити графік.</p>
+        </div>
       </div>
 
-      <button type="button" id="save-profile-btn" class="primary-btn">Зберегти та продовжити</button>
-    </div>
-  </div>
-
-  <!-- ==================== ГОЛОВНА СТОРІНКА (DASHBOARD) ==================== -->
-  <div id="screen-dashboard" class="screen">
-    <div class="app-layout">
-      
-      <!-- ЛІВА КОЛОНКА -->
-      <aside class="sidebar-left">
-        <div class="logo">Bolest<span class="accent-text">.ai</span></div>
-        
-        <nav class="main-nav">
-          <button class="nav-btn active" data-view="analytics"><span>📊 Аналітика</span></button>
-          <button class="nav-btn" data-view="leaderboard"><span>🏆 Лідерборд</span></button>
-          <button class="nav-btn" data-view="profile"><span>👤 Профіль</span></button>
-          <button class="nav-btn" data-view="project"><span>ℹ️ Про проект</span></button>
-        </nav>
-
-        <div class="score-block">
-          <div class="score-header">
-            <span>Прогнозований бал</span>
-            <button class="collapse-btn" id="collapse-score-btn">▼</button>
+      <div id="view-profile" class="content-view">
+        <div class="profile-view">
+          <div class="profile-top-row">
+            <span class="profile-level" id="profile-level">Рівень 1</span>
+            <span class="profile-questions" id="profile-questions">0 питань</span>
           </div>
-          <div id="score-subjects-container">
-            <div class="subject-row">
-              <div class="subject-top">
-                <span class="subject-name"><span class="legend-dot dot-math"></span> Математика</span>
-                <span class="subject-score" id="score-math">175</span>
-              </div>
-              <div class="subject-range">Діапазон: 165 - 185</div>
-            </div>
-            <div class="subject-row">
-              <div class="subject-top">
-                <span class="subject-name"><span class="legend-dot dot-ukrainian"></span> Укр. мова</span>
-                <span class="subject-score" id="score-ukrainian">182</span>
-              </div>
-              <div class="subject-range">Діапазон: 172 - 190</div>
-            </div>
-            <div class="subject-row">
-              <div class="subject-top">
-                <span class="subject-name"><span class="legend-dot dot-history"></span> Історія України</span>
-                <span class="subject-score" id="score-history">168</span>
-              </div>
-              <div class="subject-range">Діапазон: 158 - 178</div>
-            </div>
+
+          <div class="profile-avatar-big" id="profile-avatar-big">
+            <span id="profile-avatar-placeholder">Немає фото</span>
+            <img id="profile-avatar-img" src="" alt="Фото профілю" style="display:none">
           </div>
+
+          <h3 class="profile-nickname" id="profile-nickname">—</h3>
+          <p class="profile-description" id="profile-description">Опис відсутній</p>
         </div>
-      </aside>
-
-      <!-- ЦЕНТРАЛЬНА КОЛОНКА -->
-      <main class="content-center">
-        
-        <!-- В'Ю: АНАЛІТИКА -->
-        <section id="view-analytics" class="content-view active">
-          <h2>Аналітика підготовки</h2>
-          
-          <div class="analytics-columns">
-            <div class="analytics-col">
-              <div class="analytics-col-title dot-math">
-                <span class="legend-dot dot-math"></span> Математика
-              </div>
-              <div class="analytics-stat">
-                <strong id="analytics-math-score">175</strong>
-                <span>Прогнозований бал</span>
-              </div>
-              <div class="analytics-stat">
-                <strong id="analytics-math-accuracy">0.0%</strong>
-                <span>Точність відповідей</span>
-              </div>
-            </div>
-
-            <div class="analytics-col">
-              <div class="analytics-col-title dot-ukrainian">
-                <span class="legend-dot dot-ukrainian"></span> Українська мова
-              </div>
-              <div class="analytics-stat">
-                <strong id="analytics-ukr-score">182</strong>
-                <span>Прогнозований бал</span>
-              </div>
-              <div class="analytics-stat">
-                <strong id="analytics-ukr-accuracy">0.0%</strong>
-                <span>Точність відповідей</span>
-              </div>
-            </div>
-
-            <div class="analytics-col">
-              <div class="analytics-col-title dot-history">
-                <span class="legend-dot dot-history"></span> Історія України
-              </div>
-              <div class="analytics-stat">
-                <strong id="analytics-hist-score">168</strong>
-                <span>Прогнозований бал</span>
-              </div>
-              <div class="analytics-stat">
-                <strong id="analytics-hist-accuracy">0.0%</strong>
-                <span>Точність відповідей</span>
-              </div>
-            </div>
-          </div>
-
-          <table class="analytics-table">
-            <thead>
-              <tr>
-                <th>Предмет</th>
-                <th>Пройдено тестів</th>
-                <th>Вірних відповідей</th>
-                <th>Сер. accuracy</th>
-              </tr>
-            </thead>
-            <tbody id="analytics-table-body">
-              <!-- Заповнюється JS -->
-            </tbody>
-          </table>
-
-          <div class="analytics-chart-block">
-            <h3>Динаміка результатів</h3>
-            <canvas id="analytics-chart"></canvas>
-            <div class="chart-legend">
-              <div class="legend-item"><span class="legend-dot dot-math"></span> Математика</div>
-              <div class="legend-item"><span class="legend-dot dot-ukrainian"></span> Укр. мова</div>
-              <div class="legend-item"><span class="legend-dot dot-history"></span> Історія України</div>
-            </div>
-          </div>
-        </section>
-
-        <!-- В'Ю: ЛІДЕРБОРД -->
-        <section id="view-leaderboard" class="content-view">
-          <h2>Таблиця лідерів</h2>
-          
-          <div class="leaderboard-filters">
-            <button class="filter-btn active" data-filter="score">За балом НМТ</button>
-            <button class="filter-btn" data-filter="accuracy">За точністю (%)</button>
-            <button class="filter-btn" data-filter="streak">За стриком (днів)</button>
-            <button class="filter-btn" data-filter="tests">За тестами</button>
-          </div>
-
-          <div id="leaderboard-list" class="leaderboard-list">
-            <!-- Динамічний список -->
-          </div>
-        </section>
-
-        <!-- В'Ю: ПРОФІЛЬ -->
-        <section id="view-profile" class="content-view">
-          <div class="profile-view">
-            <div class="profile-avatar-big">
-              <img id="profile-avatar-img" src="" alt="Avatar" style="display:none;">
-              <span id="profile-avatar-placeholder">Аватар відсутній</span>
-            </div>
-            <h2 id="profile-nickname-display" class="profile-nickname">Без нікнейму</h2>
-            <div class="profile-top-row">
-              <span>Рівень: <strong id="profile-level-display" class="profile-level">1</strong></span>
-              <span>XP: <strong id="profile-xp-display">0</strong></span>
-            </div>
-            <p id="profile-description-display" class="profile-description">Опис відсутній</p>
-          </div>
-        </section>
-
-        <!-- В'Ю: ПРО ПРОЕКТ -->
-        <section id="view-project" class="content-view">
-          <div class="project-info">
-            <h2>Про платформу Bolest.ai</h2>
-            <p class="project-text-placeholder">
-              Bolest.ai — це інтелектуальна система аналітики та підготовки до НМТ/ЗНО. 
-              Система відстежує ваш прогрес, будує індивідуальні графіки динаміки та прогнозує підсумковий бал за предметами.
-            </p>
-          </div>
-        </section>
-
-      </main>
-
-      <!-- ПРАВА КОЛОНКА -->
-      <aside class="sidebar-right">
-        
-        <div class="level-block">
-          <div class="level-header">
-            <span>Рівень <span id="user-level">1</span></span>
-            <span class="level-points"><span id="user-xp">0</span> / 1000 XP</span>
-          </div>
-          <div class="xp-bar">
-            <div id="xp-fill" class="xp-fill" style="width: 0%;"></div>
-          </div>
-        </div>
-
-        <div class="streak-block">
-          <div class="streak-title">Стрик активності: <strong id="streak-count" class="accent-text">0</strong> днів 🔥</div>
-          <div id="streak-container" class="streak-days">
-            <div class="day-cell">Пн</div>
-            <div class="day-cell">Вт</div>
-            <div class="day-cell">Ср</div>
-            <div class="day-cell">Чт</div>
-            <div class="day-cell">Пт</div>
-            <div class="day-cell">Сб</div>
-            <div class="day-cell">Нд</div>
-          </div>
-        </div>
-
-        <div class="stats-block">
-          <div class="stats-tabs">
-            <button class="tab active">Загальні</button>
-          </div>
-          <div class="stats-numbers">
-            <div class="stat-item">
-              <strong id="stat-total-tests">0</strong>
-              <span>Тестів</span>
-            </div>
-            <div class="stat-item">
-              <strong id="stat-avg-score">0</strong>
-              <span>Сер. бал</span>
-            </div>
-            <div class="stat-item">
-              <strong id="stat-accuracy">0%</strong>
-              <span>Точність</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="priorities-block">
-          <h3>Пріоритетні теми</h3>
-          <div class="session-item">
-            <span class="session-label">Математика</span>
-            <span class="session-topic topic-pink">Параметри та функції</span>
-            <span class="session-progress">Опрацьовано 40%</span>
-          </div>
-          <div class="session-item">
-            <span class="session-label">Українська мова</span>
-            <span class="session-topic topic-yellow">Складне речення</span>
-            <span class="session-progress">Опрацьовано 65%</span>
-          </div>
-          <div class="session-item">
-            <span class="session-label">Історія України</span>
-            <span class="session-topic topic-green">Друга світова війна</span>
-            <span class="session-progress">Опрацьовано 80%</span>
-          </div>
-        </div>
-
-        <div class="action-buttons">
-          <button id="btn-open-add-modal" class="action-btn wide">
-            <span class="plus">+</span> Додати результат тесту
-          </button>
-        </div>
-
-      </aside>
-
-    </div>
-  </div>
-
-  <!-- МОДАЛЬНЕ ВІКНО ДОДАВАННЯ РЕЗУЛЬТАТУ -->
-  <div id="modal-add-session" class="modal-overlay">
-    <div class="modal-box">
-      <button id="modal-close-btn" class="modal-close">&times;</button>
-      <div class="modal-content">
-        <h3>Додати результат тесту</h3>
-        
-        <label class="modal-field-label" for="modal-subject-select">Предмет</label>
-        <select id="modal-subject-select">
-          <option value="math">Математика</option>
-          <option value="ukrainian">Українська мова</option>
-          <option value="history">Історія України</option>
-        </select>
-
-        <label class="modal-field-label" for="modal-correct-input">Правильних відповідей</label>
-        <input type="number" id="modal-correct-input" min="0" value="15">
-
-        <label class="modal-field-label" for="modal-total-input">Всього питань у тесті</label>
-        <input type="number" id="modal-total-input" min="1" value="20">
-
-        <button id="modal-submit-btn" class="modal-submit-btn">Зберегти результат</button>
-        <div id="modal-result-msg" class="modal-result"></div>
       </div>
-    </div>
-  </div>
 
-  <script src="script.js"></script>
+      <div id="view-leaderboard" class="content-view">
+        <h2>Лідерборд</h2>
+
+        <div class="leaderboard-filters">
+          <button class="filter-btn active" type="button" data-filter="questions">Кількість питань</button>
+          <button class="filter-btn" type="button" data-filter="accuracy">Точність</button>
+          <button class="filter-btn" type="button" data-filter="math">Математика</button>
+          <button class="filter-btn" type="button" data-filter="ukrainian">Українська мова</button>
+          <button class="filter-btn" type="button" data-filter="history">Історія України</button>
+        </div>
+
+        <div class="leaderboard-list" id="leaderboard-list">
+          <p class="leaderboard-empty" id="leaderboard-empty-note">Завантаження...</p>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ПРАВА КОЛОНКА -->
+    <aside class="sidebar-right">
+
+      <div class="level-block">
+        <div class="level-header">
+          <span class="level-title" id="level-title">Рівень 1</span>
+          <span class="level-points" id="level-points">0/100</span>
+        </div>
+        <div class="xp-bar"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+      </div>
+
+      <div class="streak-block">
+        <p class="streak-title">0 днів поспіль навчання</p>
+        <div class="streak-days">
+          <div class="day-cell">Пн</div>
+          <div class="day-cell">Вт</div>
+          <div class="day-cell">Ср</div>
+          <div class="day-cell">Чт</div>
+          <div class="day-cell">Пт</div>
+          <div class="day-cell">Сб</div>
+          <div class="day-cell">Нд</div>
+        </div>
+      </div>
+
+      <div class="stats-block">
+        <div class="stats-tabs">
+          <button class="tab active" type="button" data-tab="today">Сьогодні</button>
+          <button class="tab" type="button" data-tab="all-time">За весь час</button>
+        </div>
+        <div class="stats-numbers">
+          <div class="stat-item">
+            <strong>0</strong>
+            <span>Питання</span>
+          </div>
+          <div class="stat-item">
+            <strong>0%</strong>
+            <span>Точність</span>
+          </div>
+          <div class="stat-item">
+            <strong>0%</strong>
+            <span>Складність</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="priorities-block">
+        <h3>Пріоритети навчального плану</h3>
+
+        <div class="session-item">
+          <div class="session-label">Навчальна сесія</div>
+          <div class="session-topic topic-pink">Тема 1</div>
+          <div class="session-progress">0/10</div>
+        </div>
+
+        <div class="session-item">
+          <div class="session-label">Навчальна сесія</div>
+          <div class="session-topic topic-yellow">Тема 2</div>
+          <div class="session-progress">0/10</div>
+        </div>
+
+        <div class="session-item">
+          <div class="session-label">Навчальна сесія</div>
+          <div class="session-topic topic-green">Тема 3</div>
+          <div class="session-progress">0/10</div>
+        </div>
+
+        <div class="session-item">
+          <div class="session-label">Навчальна сесія</div>
+          <div class="session-topic topic-default">Тема 4</div>
+          <div class="session-progress">0/10</div>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="action-btn" type="button" id="btn-session"><span class="plus">+</span> Навчальна сесія</button>
+        <button class="action-btn" type="button" id="btn-test">Пробний тест</button>
+        <button class="action-btn wide" type="button" id="btn-review">Лабораторія повторення</button>
+      </div>
+
+    </aside>
+  </div>
+</div>
+
+<!-- ==================== МОДАЛЬНЕ ВІКНО ==================== -->
+<div id="modal-overlay" class="modal-overlay">
+  <div class="modal-box">
+    <button id="modal-close" class="modal-close" type="button" aria-label="Закрити">×</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
