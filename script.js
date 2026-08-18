@@ -1,5 +1,5 @@
 /* =====================================================================
-   BOLEST.AI — ОНОВЛЕНИЙ ФРОНТЕНД
+   BOLEST.AI — МНОГОСТРАНИЧНЫЙ СКРИПТ С СОХРАНЕНИЕМ
    ===================================================================== */
 const SUPABASE_URL = 'https://envhnssxtxcoxazfblfg.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_G1U5Iy7GZQaAIM8Uoah-4g_2-A2xDoX'; 
@@ -9,217 +9,262 @@ let currentUser = null;
 let currentProfile = null;
 let authMode = "login";
 
+// Добавьте обработчики для кнопок подсказок
+const btnHint1 = document.getElementById("btn-hint-1");
+if (btnHint1) {
+  btnHint1.onclick = () => {
+    const q = sessionState.questions[sessionState.currentIndex];
+    const aiBox = document.getElementById("ai-messages-area");
+    if (q && q.hint_1 && aiBox) {
+      aiBox.innerHTML += `<p class="ai-msg">💡 <b>Підказка 1:</b> ${q.hint_1}</p>`;
+    }
+  };
+}
+
+const btnExplain = document.getElementById("btn-ai-explain");
+if (btnExplain) {
+  btnExplain.onclick = () => {
+    const q = sessionState.questions[sessionState.currentIndex];
+    const aiBox = document.getElementById("ai-messages-area");
+    if (q && q.explanation && aiBox) {
+      aiBox.innerHTML += `<p class="ai-msg">🤖 <b>Пояснення:</b> ${q.explanation}</p>`;
+    }
+  };
+}
+const btnSaveProfile = document.getElementById("btn-save-initial-setup");
+if (btnSaveProfile) {
+  btnSaveProfile.addEventListener("click", async () => {
+    if (!currentUser) return;
+    
+    const newProfile = {
+      id: currentUser.id,
+      xp: 0,
+      level: 1,
+      math_score: 100,
+      ukrainian_score: 100,
+      history_score: 100,
+      topics_progress: {}
+    };
+
+    const { error } = await supabaseClient.from('profiles').insert([newProfile]);
+    if (error) {
+      console.error("Ошибка создания профиля:", error);
+      alert("Не удалось сохранить профиль");
+    } else {
+      currentProfile = newProfile;
+      window.location.href = "dashboard.html";
+    }
+  });
+}
+
+const tabLogin = document.getElementById("tab-login");
+const tabRegister = document.getElementById("tab-register");
+
+if (tabLogin && tabRegister) {
+  tabLogin.onclick = () => { authMode = "login"; tabLogin.classList.add("active"); tabRegister.classList.remove("active"); };
+  tabRegister.onclick = () => { authMode = "register"; tabRegister.classList.add("active"); tabLogin.classList.remove("active"); };
+}
 const SUBJECTS_META = {
   math: { label: "Математика", max: 32 },
   ukrainian: { label: "Українська мова", max: 45 },
   history: { label: "Історія України", max: 54 }
 };
 
-const SUBJECT_COLORS = { math: "#f472b6", ukrainian: "#facc15", history: "#4ade80" };
-
-// Всі теми НМТ (повний список)
 const NMT_TOPICS = {
   math: ["Числа і вирази", "Рівняння та нерівності", "Функції", "Елементи комбінаторики та ймовірність", "Планіметрія", "Стереометрія"],
   ukrainian: ["Фонетика, графіка, орфоепія", "Лексикологія і фразеологія", "Будова слова і словотвір", "Морфологія", "Синтаксис", "Стилістика", "Розвиток мовлення"],
   history: ["Русь-Україна", "Українські землі у 16 ст.", "Козацька Україна", "Українські землі у 19 ст.", "Україна у 20 ст.", "Незалежна Україна"]
 };
 
-// --- АВТОРИЗАЦІЯ (Без змін) ---
+let sessionState = { mode: "", questions: [], currentIndex: 0, currentSubject: "", selectedTopicsCounts: {}, hintClicks: 0, wrongClicks: 0, firstTry: true, correctStats: 0 };
+
 function showScreen(id) {
+  const target = document.getElementById(id);
+  if (!target) return;
   document.querySelectorAll(".screen").forEach(el => el.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
+  target.classList.add("active");
 }
 
-const emailInput = document.getElementById("email-input");
-const passwordInput = document.getElementById("password-input");
-const authSubmitBtn = document.getElementById("auth-submit-btn");
-const authNote = document.getElementById("auth-note");
-
-document.getElementById("auth-switch-btn").addEventListener("click", () => {
-  authMode = authMode === "login" ? "register" : "login";
-  document.getElementById("auth-mode-subtitle").textContent = authMode === "login" ? "Увійдіть у свій акаунт" : "Створіть новий акаунт";
-  authSubmitBtn.textContent = authMode === "login" ? "Увійти" : "Зареєструватися";
-  document.getElementById("auth-switch-text").textContent = authMode === "login" ? "Немає акаунту?" : "Вже є акаунт?";
-});
-
-authSubmitBtn.addEventListener("click", handleAuthSubmit);
-async function handleAuthSubmit() {
-  const email = emailInput.value.trim();
-  const password = passwordInput.value;
-  if (!email || !password) return;
-  
-  try {
-    let res = authMode === "login" 
-      ? await supabaseClient.auth.signInWithPassword({ email, password })
-      : await supabaseClient.auth.signUp({ email, password });
-    if (res.error) throw res.error;
-    currentUser = res.data.user;
-    await checkAndLoadProfile();
-  } catch (err) { authNote.textContent = err.message; }
-}
-
+// --- АВТОРИЗАЦИЯ И ИНИЦИАЛИЗАЦИЯ ---
 async function checkAndLoadProfile() {
   if (!currentUser) return;
-  const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
-  if (profile) { currentProfile = profile; renderDashboard(); showScreen("screen-dashboard"); } 
-  else { showScreen("screen-setup"); }
+  const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+  
+  if (error) {
+    console.error("Помилка завантаження профілю:", error);
+    return;
+  }
+
+  if (profile) { 
+    currentProfile = profile; 
+    if (document.getElementById("screen-dashboard")) {
+      renderDashboard(); 
+      showScreen("screen-dashboard"); 
+    } else if (document.getElementById("screen-session-setup")) {
+      initSessionPage();
+    }
+  } else { 
+    if (document.getElementById("screen-setup")) {
+      showScreen("screen-setup"); 
+    }
+  }
 }
 
-// --- ДАШБОРД ТА ПРІОРИТЕТИ ---
+// --- ДАШБОРД ---
 function renderDashboard() {
   if (!currentProfile) return;
   const totalXp = currentProfile.xp || 0;
   const level = Math.floor(totalXp / 100) + 1;
-  document.getElementById("level-title").textContent = `Рівень ${level}`;
-  document.getElementById("level-points").textContent = `${totalXp % 100}/100`;
-  document.getElementById("xp-fill").style.width = `${Math.min(100, (totalXp % 100))}%`;
+  
+  const levelTitle = document.getElementById("level-title");
+  if (levelTitle) levelTitle.textContent = `Рівень ${level}`;
+  
+  const levelPoints = document.getElementById("level-points");
+  if (levelPoints) levelPoints.textContent = `${totalXp % 100}/100`;
+  
+  const xpFill = document.getElementById("xp-fill");
+  if (xpFill) xpFill.style.width = `${Math.min(100, (totalXp % 100))}%`;
 
   let totalQ = 0, totalCorrect = 0;
   ["math", "ukrainian", "history"].forEach(subj => {
     totalQ += (currentProfile[`${subj}_questions`] || 0);
     totalCorrect += (currentProfile[`${subj}_correct`] || 0);
   });
-  document.getElementById("stat-total-q").textContent = totalQ;
-  document.getElementById("stat-total-acc").textContent = totalQ > 0 ? Math.round((totalCorrect/totalQ)*100) + "%" : "0%";
+
+  const statQ = document.getElementById("stat-total-q");
+  if (statQ) statQ.textContent = totalQ;
+
+  const statAcc = document.getElementById("stat-total-acc");
+  if (statAcc) statAcc.textContent = totalQ > 0 ? Math.round((totalCorrect/totalQ)*100) + "%" : "0%";
 
   renderPrioritiesList();
 }
 
 function renderPrioritiesList() {
   const container = document.getElementById("priorities-list-container");
+  if (!container) return;
   container.innerHTML = "";
   const progress = currentProfile.topics_progress || {};
 
   Object.keys(NMT_TOPICS).forEach(subject => {
     NMT_TOPICS[subject].forEach(topic => {
       const solved = progress[topic] || 0;
-      let colorClass = "topic-default";
-      if(subject === "math") colorClass = "topic-pink";
-      if(subject === "ukrainian") colorClass = "topic-yellow";
-      if(subject === "history") colorClass = "topic-green";
+      let colorClass = subject === "math" ? "topic-pink" : subject === "ukrainian" ? "topic-yellow" : "topic-green";
 
       container.innerHTML += `
         <div class="session-item">
           <div class="session-label">${SUBJECTS_META[subject].label}</div>
           <div class="session-topic ${colorClass}">${topic}</div>
-          <div class="session-progress">(кількість вирішених завдань: ${solved})</div>
+          <div class="session-progress">(вирішено: ${solved})</div>
         </div>
       `;
     });
   });
 }
 
-// --- НАВІГАЦІЯ ---
-document.querySelectorAll(".nav-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    document.querySelectorAll(".content-view").forEach(v => v.classList.remove("active"));
-    document.getElementById(`view-${btn.dataset.nav}`).classList.add("active");
-  });
-});
+// --- ЛОГИКА СЕССИИ / ТЕСТА ---
+function initSessionPage() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const mode = urlParams.get('mode') || 'session';
+  sessionState.mode = mode;
 
-/* =====================================================================
-   ЛОГІКА СЕСІЙ ТА ТЕСТІВ (НОВЕ)
-   ===================================================================== */
-
-let sessionState = { mode: "", questions: [], currentIndex: 0, currentSubject: "", selectedTopicsCounts: {}, hintClicks: 0, wrongClicks: 0, firstTry: true, correctStats: 0 };
-
-// 1. ВІДКРИТТЯ НАЛАШТУВАНЬ
-document.getElementById("btn-session").addEventListener("click", () => {
-  sessionState.mode = "session";
-  document.getElementById("setup-wizard-title").textContent = "Що будемо практикувати?";
-  document.getElementById("setup-step-1").classList.add("active");
-  document.getElementById("setup-step-2").classList.remove("active");
+  showScreen("screen-session-setup");
   
+  const title = document.getElementById("setup-wizard-title");
+  const step1 = document.getElementById("setup-step-1");
+  const step2 = document.getElementById("setup-step-2");
   const container = document.getElementById("topics-selection-container");
+  
+  if (!container) return;
+  step1.classList.add("active");
+  step2.classList.remove("active");
   container.innerHTML = "";
-  Object.keys(NMT_TOPICS).forEach(subj => {
-    let html = `<div class="subject-group"><div class="subject-group-title">${SUBJECTS_META[subj].label}</div>`;
-    NMT_TOPICS[subj].forEach(topic => {
-      html += `<label class="topic-checkbox-label"><input type="checkbox" class="topic-cb" data-subj="${subj}" value="${topic}"> ${topic}</label>`;
+
+  if (mode === "session") {
+    if (title) title.textContent = "Що будемо практикувати?";
+    Object.keys(NMT_TOPICS).forEach(subj => {
+      let html = `<div class="subject-group"><div class="subject-group-title">${SUBJECTS_META[subj].label}</div>`;
+      NMT_TOPICS[subj].forEach(topic => {
+        html += `<label class="topic-checkbox-label"><input type="checkbox" class="topic-cb" data-subj="${subj}" value="${topic}"> ${topic}</label>`;
+      });
+      html += `</div>`;
+      container.innerHTML += html;
     });
-    html += `</div>`;
-    container.innerHTML += html;
-  });
-  showScreen("screen-session-setup");
-});
-
-document.getElementById("btn-test").addEventListener("click", () => {
-  sessionState.mode = "mock";
-  document.getElementById("setup-wizard-title").textContent = "Пробний тест (Обери 1 предмет)";
-  document.getElementById("setup-step-1").classList.add("active");
-  document.getElementById("setup-step-2").classList.remove("active");
-
-  const container = document.getElementById("topics-selection-container");
-  container.innerHTML = "";
-  Object.keys(SUBJECTS_META).forEach(subj => {
-    container.innerHTML += `<label class="topic-checkbox-label" style="font-size: 16px; margin-bottom: 10px;"><input type="radio" name="mock-subj" value="${subj}"> ${SUBJECTS_META[subj].label}</label>`;
-  });
-  showScreen("screen-session-setup");
-});
-
-// 2. ПЕРЕХІД ДО КІЛЬКОСТІ ПИТАНЬ АБО СТАРТ ТЕСТУ
-document.getElementById("setup-btn-next-1").addEventListener("click", async () => {
-  if (sessionState.mode === "session") {
-    const checked = Array.from(document.querySelectorAll('.topic-cb:checked'));
-    if (checked.length === 0) return alert("Обери хоча б одну тему!");
-    
-    const sliderContainer = document.getElementById("sliders-container");
-    sliderContainer.innerHTML = "";
-    checked.forEach(cb => {
-      sliderContainer.innerHTML += `
-        <div class="slider-row">
-          <div class="slider-header"><span>${cb.value}</span> <span class="slider-val" id="val-${cb.value}">5</span></div>
-          <input type="range" class="range-slider count-slider" data-topic="${cb.value}" data-subj="${cb.dataset.subj}" min="1" max="10" value="5" oninput="document.getElementById('val-${cb.value}').textContent = this.value">
-        </div>`;
-    });
-    document.getElementById("setup-step-1").classList.remove("active");
-    document.getElementById("setup-step-2").classList.add("active");
   } else {
-    // Для пробного теста
-    const selectedRadio = document.querySelector('input[name="mock-subj"]:checked');
-    if(!selectedRadio) return alert("Обери предмет!");
-    sessionState.currentSubject = selectedRadio.value;
-    await fetchQuestionsFromDB(sessionState.currentSubject, [], 20); // 20 питань дефолт для тесту
-    startMockTest();
+    if (title) title.textContent = "Пробний тест (Обери 1 предмет)";
+    Object.keys(SUBJECTS_META).forEach(subj => {
+      container.innerHTML += `<label class="topic-checkbox-label" style="font-size: 16px; margin-bottom: 10px;"><input type="radio" name="mock-subj" value="${subj}"> ${SUBJECTS_META[subj].label}</label>`;
+    });
   }
-});
+}
 
-document.getElementById("setup-btn-back-1").addEventListener("click", () => {
-  document.getElementById("setup-step-2").classList.remove("active");
-  document.getElementById("setup-step-1").classList.add("active");
-});
+// Переход по шагам настройки
+const btnNext1 = document.getElementById("setup-btn-next-1");
+if (btnNext1) {
+  btnNext1.addEventListener("click", async () => {
+    if (sessionState.mode === "session") {
+      const checked = Array.from(document.querySelectorAll('.topic-cb:checked'));
+      if (checked.length === 0) return alert("Обери хоча б одну тему!");
+      
+      const sliderContainer = document.getElementById("sliders-container");
+      sliderContainer.innerHTML = "";
+      checked.forEach(cb => {
+        sliderContainer.innerHTML += `
+          <div class="slider-row">
+            <div class="slider-header"><span>${cb.value}</span> <span class="slider-val" id="val-${cb.value}">5</span></div>
+            <input type="range" class="range-slider count-slider" data-topic="${cb.value}" data-subj="${cb.dataset.subj}" min="1" max="10" value="5" oninput="document.getElementById('val-${cb.value}').textContent = this.value">
+          </div>`;
+      });
+      document.getElementById("setup-step-1").classList.remove("active");
+      document.getElementById("setup-step-2").classList.add("active");
+    } else {
+      const selectedRadio = document.querySelector('input[name="mock-subj"]:checked');
+      if(!selectedRadio) return alert("Обери предмет!");
+      sessionState.currentSubject = selectedRadio.value;
+      await fetchQuestionsFromDB(sessionState.currentSubject, 20);
+      startMockTest();
+    }
+  });
+}
 
-document.getElementById("setup-btn-start").addEventListener("click", async () => {
-  const sliders = document.querySelectorAll('.count-slider');
-  sessionState.selectedTopicsCounts = {};
-  sliders.forEach(s => { sessionState.selectedTopicsCounts[s.dataset.topic] = { count: parseInt(s.value), subj: s.dataset.subj }; });
-  
-  await fetchSessionQuestions();
-  startActiveSession();
-});
+const btnBack1 = document.getElementById("setup-btn-back-1");
+if (btnBack1) {
+  btnBack1.addEventListener("click", () => {
+    document.getElementById("setup-step-2").classList.remove("active");
+    document.getElementById("setup-step-1").classList.add("active");
+  });
+}
 
-// 3. СТЯГУВАННЯ ВОПРОСІВ З SUPABASE
+const btnStart = document.getElementById("setup-btn-start");
+if (btnStart) {
+  btnStart.addEventListener("click", async () => {
+    const sliders = document.querySelectorAll('.count-slider');
+    sessionState.selectedTopicsCounts = {};
+    sliders.forEach(s => { sessionState.selectedTopicsCounts[s.dataset.topic] = { count: parseInt(s.value), subj: s.dataset.subj }; });
+    
+    await fetchSessionQuestions();
+    startActiveSession();
+  });
+}
+
+// Загрузка вопросов из базы
 async function fetchSessionQuestions() {
   sessionState.questions = [];
-  // Цикл по обраним темам та лімітам
   for (const [topic, info] of Object.entries(sessionState.selectedTopicsCounts)) {
     const { data } = await supabaseClient.from('questions').select('*').eq('topic', topic).limit(info.count);
-    // Якщо БД пуста, створимо заглушки для демонстрації
     if (!data || data.length === 0) {
-      for(let i=0; i<info.count; i++) {
+      for(let i = 0; i < info.count; i++) {
         sessionState.questions.push({
           topic: topic, subject: info.subj, question_text: `Питання по темі: ${topic} #${i+1}`,
           options: ["Варіант А", "Варіант Б", "Варіант В", "Варіант Г"], correct_index: Math.floor(Math.random()*4),
-          hint_1: "Спробуй згадати основну формулу.", hint_2: "Уважно подивись на другий рядок.", explanation: "Ось як це вирішується детально..."
+          hint_1: "Підказка 1", hint_2: "Підказка 2", explanation: "Пояснення розв'язку..."
         });
       }
     } else { sessionState.questions.push(...data); }
   }
 }
 
-async function fetchQuestionsFromDB(subj, topics, limit) {
+async function fetchQuestionsFromDB(subj, limit) {
   const { data } = await supabaseClient.from('questions').select('*').eq('subject', subj).limit(limit);
   if (!data || data.length === 0) {
     sessionState.questions = Array.from({length: limit}, (_, i) => ({
@@ -229,7 +274,7 @@ async function fetchQuestionsFromDB(subj, topics, limit) {
   } else { sessionState.questions = data; }
 }
 
-// 4. ЛОГІКА АКТИВНОЇ СЕСІЇ
+// Активная сессия
 function startActiveSession() {
   sessionState.currentIndex = 0;
   sessionState.correctStats = 0;
@@ -263,7 +308,6 @@ function renderSessionQuestion() {
 
 function handleSessionAnswerClick(btn, selectedIdx, correctIdx, topic, subj) {
   if (btn.classList.contains("locked")) return;
-
   const allBtns = document.querySelectorAll("#session-options .option-btn");
   
   if (selectedIdx === correctIdx) {
@@ -274,9 +318,9 @@ function handleSessionAnswerClick(btn, selectedIdx, correctIdx, topic, subj) {
     if (sessionState.firstTry) {
       sessionState.correctStats++;
       updateTopicProgress(topic, 1);
-      updateSubjectStats(subj, 1, 1); // +1 вопрос, +1 верно
+      updateSubjectStats(subj, 1, 1);
     } else {
-      updateSubjectStats(subj, 1, 0); // +1 вопрос, 0 верно
+      updateSubjectStats(subj, 1, 0);
     }
   } else {
     btn.classList.add("wrong", "locked");
@@ -292,32 +336,17 @@ function handleSessionAnswerClick(btn, selectedIdx, correctIdx, topic, subj) {
   }
 }
 
-document.getElementById("btn-give-hint").onclick = () => {
-  const q = sessionState.questions[sessionState.currentIndex];
-  sessionState.hintClicks++;
-  const msgArea = document.getElementById("ai-messages-area");
-  
-  if (sessionState.hintClicks === 1) msgArea.innerHTML += `<div class="ai-msg"><b>Підказка 1:</b> ${q.hint_1 || "Зверни увагу на умову."}</div>`;
-  else if (sessionState.hintClicks === 2) msgArea.innerHTML += `<div class="ai-msg"><b>Підказка 2:</b> ${q.hint_2 || "Спробуй виключити нелогічні варіанти."}</div>`;
-  else msgArea.innerHTML += `<div class="ai-msg" style="border-left-color:#ef4444;">Підказки закінчилися - думай сам!</div>`;
-  msgArea.scrollTop = msgArea.scrollHeight;
-};
+const btnNextQ = document.getElementById("btn-session-next");
+if (btnNextQ) {
+  btnNextQ.onclick = () => {
+    if (sessionState.currentIndex + 1 < sessionState.questions.length) {
+      sessionState.currentIndex++;
+      renderSessionQuestion();
+    } else { finishSession(); }
+  };
+}
 
-document.getElementById("btn-explain-step").onclick = () => {
-  const q = sessionState.questions[sessionState.currentIndex];
-  const msgArea = document.getElementById("ai-messages-area");
-  msgArea.innerHTML += `<div class="ai-msg"><b>Пояснення:</b> ${q.explanation || "Тут має бути покроковий розв'язок."}</div>`;
-  msgArea.scrollTop = msgArea.scrollHeight;
-};
-
-document.getElementById("btn-session-next").onclick = () => {
-  if (sessionState.currentIndex + 1 < sessionState.questions.length) {
-    sessionState.currentIndex++;
-    renderSessionQuestion();
-  } else { finishSession(); }
-};
-
-// 5. ЛОГІКА ПРОБНОГО ТЕСТУ
+// Пробный тест
 function startMockTest() {
   sessionState.currentIndex = 0;
   showScreen("screen-mock-test");
@@ -342,54 +371,60 @@ function renderMockQuestion() {
   q.options.forEach((optText, index) => {
     const btn = document.createElement("button");
     btn.className = "option-btn";
-    // Якщо ми вже обирали відповідь - зберігаємо її візуально
     if (q.userAnswer === index) btn.style.borderColor = "var(--accent)";
     
     btn.innerHTML = `<span class="option-label">${labels[index]}</span> ${optText}`;
     btn.onclick = () => {
       document.querySelectorAll("#mock-options .option-btn").forEach(b => b.style.borderColor = "");
       btn.style.borderColor = "var(--accent)";
-      q.userAnswer = index; // Зберігаємо вибір без фідбеку
+      q.userAnswer = index;
     };
     optionsContainer.appendChild(btn);
   });
 }
 
-document.getElementById("btn-mock-next").onclick = () => {
-  if (sessionState.currentIndex + 1 < sessionState.questions.length) {
-    sessionState.currentIndex++;
-    renderMockQuestion();
-  } else { finishTest(); }
-};
+const btnMockNext = document.getElementById("btn-mock-next");
+if (btnMockNext) {
+  btnMockNext.onclick = () => {
+    if (sessionState.currentIndex + 1 < sessionState.questions.length) {
+      sessionState.currentIndex++;
+      renderMockQuestion();
+    } else { finishTest(); }
+  };
+}
 
-// 6. ЗБЕРЕЖЕННЯ ДАНИХ У SUPABASE
+// --- СОХРАНЕНИЕ В SUPABASE (С ВЫВОДОМ ОШИБОК) ---
 async function updateTopicProgress(topic, amount) {
-  if(!currentProfile) return;
+  if (!currentProfile || !currentUser) return;
   const progress = currentProfile.topics_progress || {};
   progress[topic] = (progress[topic] || 0) + amount;
   currentProfile.topics_progress = progress;
-  await supabaseClient.from('profiles').update({ topics_progress: progress }).eq('id', currentUser.id);
+  
+  const { error } = await supabaseClient.from('profiles').update({ topics_progress: progress }).eq('id', currentUser.id);
+  if (error) console.error("Помилка збереження прогресу тем:", error);
 }
 
 async function updateSubjectStats(subject, qAdded, correctAdded) {
-  if(!currentProfile) return;
+  if (!currentProfile || !currentUser) return;
   const updates = {
     xp: (currentProfile.xp || 0) + (correctAdded * 10),
     level: Math.floor(((currentProfile.xp || 0) + (correctAdded * 10)) / 100) + 1,
     [`${subject}_questions`]: (currentProfile[`${subject}_questions`] || 0) + qAdded,
     [`${subject}_correct`]: (currentProfile[`${subject}_correct`] || 0) + correctAdded
   };
+  
   Object.assign(currentProfile, updates);
-  await supabaseClient.from('profiles').update(updates).eq('id', currentUser.id);
+  const { error } = await supabaseClient.from('profiles').update(updates).eq('id', currentUser.id);
+  if (error) console.error("Помилка збереження статистики предмета:", error);
 }
 
 function finishSession() {
-  alert(`Сесію завершено! Ви набрали правильних відповідей: ${sessionState.correctStats} з ${sessionState.questions.length}. Досвід збережено.`);
-  renderDashboard();
-  showScreen("screen-dashboard");
+  alert(`Сесію завершено! Правильних відповідей: ${sessionState.correctStats} з ${sessionState.questions.length}.`);
+  window.location.href = "dashboard.html";
 }
 
 async function finishTest() {
+  if (!currentProfile || !currentUser) return;
   let correctAnswers = 0;
   sessionState.questions.forEach(q => { if(q.userAnswer === q.correct_index) correctAnswers++; });
   
@@ -397,21 +432,47 @@ async function finishTest() {
   const scaledScore = 100 + Math.round((correctAnswers / sessionState.questions.length) * 100);
   const newHistory = [...(currentProfile[`${subj}_history`] || []), scaledScore];
   
-  await supabaseClient.from('profiles').update({
+  const updates = {
     [`${subj}_score`]: scaledScore,
     [`${subj}_history`]: newHistory,
     xp: (currentProfile.xp || 0) + 50
-  }).eq('id', currentUser.id);
+  };
+
+  const { error } = await supabaseClient.from('profiles').update(updates).eq('id', currentUser.id);
+  if (error) {
+    console.error("Помилка збереження тесту:", error);
+  } else {
+    alert(`Тест завершено! Ваш бал: ${scaledScore}.`);
+  }
   
-  currentProfile[`${subj}_score`] = scaledScore;
-  currentProfile[`${subj}_history`] = newHistory;
-  
-  alert(`Тест завершено! Ваш бал: ${scaledScore}.`);
-  renderDashboard();
-  showScreen("screen-dashboard");
+  window.location.href = "dashboard.html";
+}
+
+// Авторизация
+const authSubmitBtn = document.getElementById("auth-submit-btn");
+if (authSubmitBtn) {
+  authSubmitBtn.addEventListener("click", async () => {
+    const email = document.getElementById("email-input").value.trim();
+    const password = document.getElementById("password-input").value;
+    if (!email || !password) return;
+    
+    try {
+      let res = authMode === "login" 
+        ? await supabaseClient.auth.signInWithPassword({ email, password })
+        : await supabaseClient.auth.signUp({ email, password });
+      if (res.error) throw res.error;
+      currentUser = res.data.user;
+      await checkAndLoadProfile();
+    } catch (err) { 
+      document.getElementById("auth-note").textContent = err.message; 
+    }
+  });
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
   const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session && session.user) { currentUser = session.user; await checkAndLoadProfile(); }
+  if (session && session.user) { 
+    currentUser = session.user; 
+    await checkAndLoadProfile(); 
+  }
 });
