@@ -253,7 +253,6 @@ html, body {
   z-index: 0;
 }
 
-/* анімація наведення: заливка зліва направо */
 .nav-btn::before {
   content: "";
   position: absolute;
@@ -367,12 +366,30 @@ html, body {
   padding: 16px;
 }
 
+/* Заголовки предметов в аналитике с акцентным свечением */
 .analytics-col-title {
-  font-size: 14px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
   margin: 0 0 14px;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.analytics-col-title.dot-math {
+  color: #f472b6;
+  text-shadow: 0 0 10px rgba(244, 114, 182, 0.25);
+}
+
+.analytics-col-title.dot-ukrainian {
+  color: #facc15;
+  text-shadow: 0 0 10px rgba(250, 204, 21, 0.25);
+}
+
+.analytics-col-title.dot-history {
+  color: #4ade80;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.25);
 }
 
 .analytics-stat {
@@ -499,6 +516,17 @@ html, body {
   max-width: 360px;
   line-height: 1.5;
   margin: 0;
+}
+
+.avatar-placeholder-sm {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
 /* ==================== ЛІДЕРБОРД ==================== */
@@ -710,7 +738,6 @@ html, body {
   color: #14151a;
 }
 
-/* кольори тем — статичні, як у оригіналі */
 .topic-pink    { background: #f472b6; }
 .topic-yellow  { background: #facc15; }
 .topic-green   { background: #4ade80; }
@@ -855,6 +882,72 @@ html, body {
   color: var(--text-muted);
   text-align: center;
 }
+/* ==================== НОВІ ЕКРАНИ (СЕСІЇ ТА ТЕСТИ) ==================== */
+
+/* Скроллбар для списка тем */
+#priorities-list-container::-webkit-scrollbar { width: 6px; }
+#priorities-list-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+
+.bg-dark-focused { background: #0f1015; }
+.setup-wizard { max-width: 500px; width: 100%; text-align: center; }
+.setup-wizard h2 { font-size: 28px; margin-bottom: 8px; }
+.setup-hint { color: var(--text-muted); margin-bottom: 24px; font-size: 14px; }
+
+.setup-step { display: none; }
+.setup-step.active { display: block; }
+
+.topics-selection-container { text-align: left; background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; max-height: 400px; overflow-y: auto; }
+.subject-group { margin-bottom: 16px; }
+.subject-group-title { font-weight: 700; color: var(--accent); margin-bottom: 8px; font-size: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; }
+.topic-checkbox-label { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 14px; cursor: pointer; color: var(--text-main); }
+.topic-checkbox-label:hover { color: var(--accent-hover); }
+
+.wizard-actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
+.wizard-actions .primary-btn, .wizard-actions .secondary-btn { width: auto; margin-top: 0; padding: 10px 24px; }
+
+.slider-row { text-align: left; margin-bottom: 20px; background: var(--bg-panel); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
+.slider-header { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+.slider-val { color: var(--accent); font-weight: 700; }
+.range-slider { width: 100%; cursor: pointer; accent-color: var(--accent); }
+
+/* --- ЕКРАН АКТИВНОЇ СЕСІЇ --- */
+.split-screen { display: none; align-items: stretch; justify-content: stretch; height: 100vh; background: var(--bg-main); }
+.split-screen.active { display: flex; }
+
+.session-left { flex: 1; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 24px; background: #111114; }
+.session-right { flex: 1; display: flex; flex-direction: column; padding: 24px; position: relative; }
+.mock-test-full { max-width: 800px; margin: 0 auto; flex: none; width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-lg); height: 90vh; margin-top: 5vh; background: var(--bg-panel); }
+
+.session-header-left, .session-header-right { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+.session-progress-text { font-weight: 600; color: var(--text-muted); }
+.question-dropdown { background: var(--bg-panel-alt); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 12px; border-radius: var(--radius-md); font-size: 14px; cursor: pointer; }
+
+.game-plan-area { flex: 1; overflow-y: auto; }
+.ai-messages { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+.ai-msg { background: var(--bg-panel); padding: 12px 16px; border-radius: var(--radius-md); font-size: 14px; line-height: 1.5; border-left: 3px solid var(--accent); }
+.system-msg { color: var(--text-muted); font-size: 13px; font-style: italic; }
+
+.hint-buttons-area { display: flex; gap: 8px; padding-top: 16px; border-top: 1px solid var(--border-color); }
+.hint-btn { border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; color: #111; transition: opacity 0.2s; }
+.hint-btn:hover { opacity: 0.8; }
+.color-green { background: #4ade80; }
+.color-pink { background: #f472b6; }
+
+.question-container { flex: 1; display: flex; flex-direction: column; justify-content: center; max-width: 600px; margin: 0 auto; width: 100%; }
+.question-text { font-size: 18px; line-height: 1.6; margin-bottom: 32px; font-weight: 500; }
+.options-grid { display: flex; flex-direction: column; gap: 12px; }
+
+.option-btn { background: var(--bg-panel); border: 2px solid var(--border-color); color: var(--text-main); text-align: left; padding: 16px 20px; border-radius: var(--radius-md); font-size: 15px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 16px; }
+.option-btn:hover:not(.locked) { border-color: var(--text-muted); }
+.option-label { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--text-muted); font-size: 12px; font-weight: 700; color: var(--text-muted); }
+
+.option-btn.wrong { border-color: #ef4444; background: rgba(239, 68, 68, 0.05); }
+.option-btn.wrong .option-label { border-color: #ef4444; color: #ef4444; }
+.option-btn.correct { border-color: #22c55e; background: rgba(34, 197, 94, 0.05); }
+.option-btn.correct .option-label { border-color: #22c55e; color: #22c55e; background: #22c55e; color: #111; }
+.option-btn.locked { cursor: default; pointer-events: none; }
+
+.session-footer { margin-top: 24px; text-align: right; }
 
 /* ==================== АДАПТИВНІСТЬ ==================== */
 @media (max-width: 1100px) {
