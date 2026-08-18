@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BOLEST.AI — Підготовка до НМТ</title>
+  <title>Bolest.ai — Підготовка до НМТ</title>
   <link rel="stylesheet" href="style.css">
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -22,7 +22,7 @@
   <div id="screen-auth" class="screen active">
     <div class="auth-container">
       <div class="auth-card">
-        <h1 class="auth-logo">BOLEST<span>.AI</span></h1>
+        <h1 class="auth-logo">Bolest<span>.ai</span></h1>
         <p id="auth-mode-subtitle" class="auth-subtitle">Увійдіть у свій акаунт</p>
         
         <div class="auth-form">
@@ -80,62 +80,44 @@
   <div id="screen-dashboard" class="screen">
     <div class="app-layout dashboard-layout">
       
-      <!-- 1. ЛІВА КОЛОНКА: Лого, Навігація та Бали -->
+      <!-- ЛІВА КОЛОНКА -->
       <aside class="sidebar sidebar-left">
-        <div class="sidebar-logo">BOLEST<span>.AI</span></div>
+        <div class="sidebar-logo">Bolest.ai</div>
         <nav class="sidebar-nav">
-          <button class="nav-btn active" data-nav="dashboard">Головна</button>
+          <button class="nav-btn active" data-nav="dashboard">Репетитор</button>
           <button class="nav-btn" data-nav="analytics">Аналітика</button>
-          <button class="nav-btn" data-nav="leaderboard">Рейтинг</button>
           <button class="nav-btn" data-nav="profile">Профіль</button>
+          <button class="nav-btn" data-nav="leaderboard">Лідерборд</button>
         </nav>
 
-        <!-- Блок прогнозу балів у лівій колонці -->
-        <div class="card score-block-side" style="margin-top: auto; padding: 16px;">
-          <h4 style="margin-bottom: 12px; font-size: 14px; color: #aaa;">Прогноз балів</h4>
-          <div class="subject-row" style="margin-bottom: 8px;">
-            <span style="font-size: 13px;">Математика</span>
-            <div><strong id="score-math">—</strong><span style="font-size: 12px; color: #888;">/200</span></div>
+        <div class="card score-card-side" style="margin-top: 20px;">
+          <div class="score-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; color: #aaa;">
+            <span>Оцінка балів</span>
+            <span>⌄</span>
           </div>
-          <div class="subject-row" style="margin-bottom: 8px;">
-            <span style="font-size: 13px;">Укр. мова</span>
-            <div><strong id="score-ukrainian">—</strong><span style="font-size: 12px; color: #888;">/200</span></div>
+          <div class="score-item" style="margin-bottom: 10px;">
+            <div class="subject-name" style="font-size: 13px;">Математика</div>
+            <div class="subject-status" style="font-size: 12px; color: #888;">Ще не складали —</div>
           </div>
-          <div class="subject-row">
-            <span style="font-size: 13px;">Історія</span>
-            <div><strong id="score-history">—</strong><span style="font-size: 12px; color: #888;">/200</span></div>
+          <div class="score-item" style="margin-bottom: 10px;">
+            <div class="subject-name" style="font-size: 13px;">Українська мова</div>
+            <div class="subject-status" style="font-size: 12px; color: #888;">Ще не складали —</div>
+          </div>
+          <div class="score-item">
+            <div class="subject-name" style="font-size: 13px;">Історія України</div>
+            <div class="subject-status" style="font-size: 12px; color: #888;">Ще не складали —</div>
           </div>
         </div>
       </aside>
 
-      <!-- 2. ЦЕНТРАЛЬНА КОЛОНКА: Основний контент / Вкладки -->
+      <!-- ЦЕНТРАЛЬНА КОЛОНКА -->
       <main class="main-content content-center">
         
-        <!-- ВКЛАДКА: ГОЛОВНА -->
+        <!-- ВКЛАДКА: РЕПЕТИТОР / ГОЛОВНА -->
         <div id="view-dashboard" class="content-view active">
-          <header class="content-header">
-            <div>
-              <h1>Головна панель</h1>
-              <p>Ваш прогрес підготовки до Національного мультипредметного тесту</p>
-            </div>
-          </header>
-
-          <div class="dashboard-grid">
-            <div class="card subject-card">
-              <h3>Математика</h3>
-              <div class="score-display"><span id="score-math-card">—</span><span>/ 200</span></div>
-              <p id="range-math" class="range-note">Ще не складали</p>
-            </div>
-            <div class="card subject-card">
-              <h3>Українська мова</h3>
-              <div class="score-display"><span id="score-ukrainian-card">—</span><span>/ 200</span></div>
-              <p id="range-ukrainian" class="range-note">Ще не складали</p>
-            </div>
-            <div class="card subject-card">
-              <h3>Історія України</h3>
-              <div class="score-display"><span id="score-history-card">—</span><span>/ 200</span></div>
-              <p id="range-history" class="range-note">Ще не складали</p>
-            </div>
+          <div class="card welcome-card">
+            <h2>Про проект Bolest.ai</h2>
+            <p style="margin-top: 8px; color: #aaa;">Інтерактивна платформа підготовки до НМТ з використанням штучного інтелекту.</p>
           </div>
         </div>
 
@@ -145,55 +127,11 @@
             <h1>Аналітика та динаміка</h1>
             <p>Графіки зростання балів та детальна статистика по предметах</p>
           </header>
-
           <div class="card">
             <h3>Динаміка результатів тестів</h3>
             <div class="chart-container">
               <svg id="analytics-chart" width="640" height="280"></svg>
               <div id="chart-empty-note" class="chart-empty">Недостатньо даних для побудови графіка</div>
-            </div>
-          </div>
-
-          <div class="analytics-grid mt-24">
-            <div class="card">
-              <h4>Математика</h4>
-              <p>Питань розв'язано: <strong id="an-math-questions">0</strong></p>
-              <p>Точність: <strong id="an-math-accuracy">0%</strong></p>
-              <p>Останній бал: <strong id="an-table-math">—</strong></p>
-            </div>
-            <div class="card">
-              <h4>Українська мова</h4>
-              <p>Питань розв'язано: <strong id="an-ukrainian-questions">0</strong></p>
-              <p>Точність: <strong id="an-ukrainian-accuracy">0%</strong></p>
-              <p>Останній бал: <strong id="an-table-ukrainian">—</strong></p>
-            </div>
-            <div class="card">
-              <h4>Історія України</h4>
-              <p>Питань розв'язано: <strong id="an-history-questions">0</strong></p>
-              <p>Точність: <strong id="an-history-accuracy">0%</strong></p>
-              <p>Останній бал: <strong id="an-table-history">—</strong></p>
-            </div>
-          </div>
-        </div>
-
-        <!-- ВКЛАДКА: РЕЙТИНГ -->
-        <div id="view-leaderboard" class="content-view">
-          <header class="content-header">
-            <h1>Таблиця лідерів</h1>
-            <p>Змагайтеся з іншими учнями за першість у рейтингу</p>
-          </header>
-
-          <div class="filters-row">
-            <button class="filter-btn active" data-filter="questions">За питаннями</button>
-            <button class="filter-btn" data-filter="accuracy">За точністю</button>
-            <button class="filter-btn" data-filter="math">Математика</button>
-            <button class="filter-btn" data-filter="ukrainian">Укр. мова</button>
-            <button class="filter-btn" data-filter="history">Історія</button>
-          </div>
-
-          <div class="card mt-16">
-            <div id="leaderboard-list" class="leaderboard-container">
-              <p class="leaderboard-empty">Завантаження...</p>
             </div>
           </div>
         </div>
@@ -204,7 +142,6 @@
             <h1>Мій профіль</h1>
             <p>Особисті дані та статистика акаунта</p>
           </header>
-
           <div class="card profile-card-box">
             <div class="profile-avatar-large">
               <img id="profile-avatar-img" src="" alt="Avatar" style="display: none;">
@@ -221,27 +158,82 @@
           </div>
         </div>
 
+        <!-- ВКЛАДКА: ЛІДЕРБОРД -->
+        <div id="view-leaderboard" class="content-view">
+          <header class="content-header">
+            <h1>Таблиця лідерів</h1>
+            <p>Змагайтеся з іншими учнями за першість у рейтингу</p>
+          </header>
+          <div class="filters-row">
+            <button class="filter-btn active" data-filter="questions">За питаннями</button>
+            <button class="filter-btn" data-filter="accuracy">За точністю</button>
+            <button class="filter-btn" data-filter="math">Математика</button>
+            <button class="filter-btn" data-filter="ukrainian">Укр. мова</button>
+            <button class="filter-btn" data-filter="history">Історія</button>
+          </div>
+          <div class="card mt-16">
+            <div id="leaderboard-list" class="leaderboard-container">
+              <p class="leaderboard-empty">Завантаження...</p>
+            </div>
+          </div>
+        </div>
+
       </main>
 
-      <!-- 3. ПРАВА КОЛОНКА: Рівень, Кнопки та Пріоритети -->
+      <!-- ПРАВА КОЛОНКА -->
       <aside class="sidebar sidebar-right">
         <!-- Блок рівня -->
-        <div class="card level-badge-box" style="margin-bottom: 20px;">
-          <span id="level-title" style="font-weight: 600;">Рівень 1</span>
-          <div class="level-bar" style="margin: 8px 0;"><div id="xp-fill" class="level-fill" style="width: 0%;"></div></div>
-          <span id="level-points" class="level-pts" style="font-size: 12px; color: #888;">0/100</span>
+        <div class="card level-card-side" style="margin-bottom: 15px;">
+          <div class="level-top-row" style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;">
+            <span id="level-title">Рівень 1</span>
+            <span id="level-points" class="level-pts" style="color: #888;">0/100</span>
+          </div>
+          <div class="level-bar"><div id="xp-fill" class="level-fill" style="width: 0%;"></div></div>
+        </div>
+
+        <!-- Блок стрик днів -->
+        <div class="card streak-card-side" style="margin-bottom: 15px; padding: 14px;">
+          <p class="streak-title" style="font-size: 13px; color: #aaa; margin-bottom: 10px;">0 днів поспіль навчання</p>
+          <div class="streak-days-row" style="display: flex; justify-content: space-between; font-size: 11px; color: #666;">
+            <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Нд</span>
+          </div>
+        </div>
+
+        <!-- Блок статистики -->
+        <div class="card stats-card-side" style="margin-bottom: 15px; padding: 14px;">
+          <div class="stats-tabs" style="display: flex; gap: 10px; margin-bottom: 12px; font-size: 12px;">
+            <button class="stats-tab active" style="background: none; border: none; color: #fff; cursor: pointer; padding: 0;">Сьогодні</button>
+            <button class="stats-tab" style="background: none; border: none; color: #777; cursor: pointer; padding: 0;">За весь час</button>
+          </div>
+          <div class="stats-grid-side" style="display: flex; justify-content: space-between; text-align: center;">
+            <div>
+              <div style="font-size: 16px; font-weight: bold;">0</div>
+              <div style="font-size: 11px; color: #777;">Питання</div>
+            </div>
+            <div>
+              <div style="font-size: 16px; font-weight: bold;">0%</div>
+              <div style="font-size: 11px; color: #777;">Точність</div>
+            </div>
+            <div>
+              <div style="font-size: 16px; font-weight: bold;">0%</div>
+              <div style="font-size: 11px; color: #777;">Складність</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Пріоритети навчального плану -->
+        <div class="card priorities-card-side" style="margin-bottom: 15px; flex: 1;">
+          <h3 style="font-size: 14px; margin-bottom: 12px;">Пріоритети навчального плану</h3>
+          <div id="priorities-list" class="priorities-container-side"></div>
         </div>
 
         <!-- Кнопки дій -->
-        <div class="actions-row" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-          <button id="btn-session" class="primary-btn" style="width: 100%;">Почати навчальну сесію</button>
-          <button id="btn-review" class="secondary-btn" style="width: 100%;">Лабораторія повторення</button>
-        </div>
-
-        <!-- Пріоритетні теми -->
-        <div class="card" style="flex: 1;">
-          <h3 style="font-size: 15px; margin-bottom: 12px;">Пріоритетні теми</h3>
-          <div id="priorities-list" class="sessions-grid"></div>
+        <div class="actions-right-col" style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; gap: 10px;">
+            <button id="btn-session" class="primary-btn" style="flex: 1; padding: 10px; font-size: 13px;">+ Навчальна сесія</button>
+            <button id="btn-test" class="secondary-btn" style="flex: 1; padding: 10px; font-size: 13px;">Пробний тест</button>
+          </div>
+          <button id="btn-review" class="secondary-btn" style="width: 100%; padding: 10px; font-size: 13px;">Лабораторія повторення</button>
         </div>
       </aside>
 
