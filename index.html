@@ -109,12 +109,125 @@
 
     <!-- ЦЕНТРАЛЬНА КОЛОНКА -->
     <main class="content-center">
-      <div class="project-info">
-        <h2>Про проєкт Bolest.ai</h2>
-        <div class="project-text-placeholder">
-          <p class="placeholder-note">Інтерактивна платформа підготовки до НМТ з використанням штучного інтелекту.</p>
+
+      <div id="view-tutor" class="content-view active">
+        <div class="project-info">
+          <h2>Про проєкт Bolest.ai</h2>
+          <div class="project-text-placeholder">
+            <p class="placeholder-note">Інтерактивна платформа підготовки до НМТ з використанням штучного інтелекту.</p>
+          </div>
         </div>
       </div>
+
+      <div id="view-analytics" class="content-view">
+        <h2>Аналітика</h2>
+
+        <div class="analytics-columns">
+          <div class="analytics-col" data-subject="math">
+            <h3 class="analytics-col-title dot-math">Математика</h3>
+            <div class="analytics-stat">
+              <strong id="an-math-questions">0</strong>
+              <span>Питань розв'язано</span>
+            </div>
+            <div class="analytics-stat">
+              <strong id="an-math-accuracy">0%</strong>
+              <span>Точність відповідей</span>
+            </div>
+          </div>
+
+          <div class="analytics-col" data-subject="ukrainian">
+            <h3 class="analytics-col-title dot-ukrainian">Українська мова</h3>
+            <div class="analytics-stat">
+              <strong id="an-ukrainian-questions">0</strong>
+              <span>Питань розв'язано</span>
+            </div>
+            <div class="analytics-stat">
+              <strong id="an-ukrainian-accuracy">0%</strong>
+              <span>Точність відповідей</span>
+            </div>
+          </div>
+
+          <div class="analytics-col" data-subject="history">
+            <h3 class="analytics-col-title dot-history">Історія України</h3>
+            <div class="analytics-stat">
+              <strong id="an-history-questions">0</strong>
+              <span>Питань розв'язано</span>
+            </div>
+            <div class="analytics-stat">
+              <strong id="an-history-accuracy">0%</strong>
+              <span>Точність відповідей</span>
+            </div>
+          </div>
+        </div>
+
+        <table class="analytics-table">
+          <thead>
+            <tr>
+              <th>Предмет</th>
+              <th>Поточний бал (100–200)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="legend-dot dot-math"></span>Математика</td>
+              <td id="an-table-math">—</td>
+            </tr>
+            <tr>
+              <td><span class="legend-dot dot-ukrainian"></span>Українська мова</td>
+              <td id="an-table-ukrainian">—</td>
+            </tr>
+            <tr>
+              <td><span class="legend-dot dot-history"></span>Історія України</td>
+              <td id="an-table-history">—</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="analytics-chart-block">
+          <h3>Динаміка результатів пробних тестів</h3>
+          <svg id="analytics-chart" viewBox="0 0 640 280" preserveAspectRatio="none"></svg>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-dot dot-math"></span>Математика</span>
+            <span class="legend-item"><span class="legend-dot dot-ukrainian"></span>Українська мова</span>
+            <span class="legend-item"><span class="legend-dot dot-history"></span>Історія України</span>
+          </div>
+          <p class="chart-empty" id="chart-empty-note">Ще немає результатів пробних тестів — складіть перший тест, щоб побачити графік.</p>
+        </div>
+      </div>
+
+      <div id="view-profile" class="content-view">
+        <div class="profile-view">
+          <div class="profile-top-row">
+            <span class="profile-level" id="profile-level">Рівень 1</span>
+            <span class="profile-questions" id="profile-questions">0 питань</span>
+          </div>
+
+          <div class="profile-avatar-big" id="profile-avatar-big">
+            <span id="profile-avatar-placeholder">Немає фото</span>
+            <img id="profile-avatar-img" src="" alt="Фото профілю" style="display:none">
+          </div>
+
+          <h3 class="profile-nickname" id="profile-nickname">—</h3>
+          <p class="profile-description" id="profile-description">Опис відсутній</p>
+        </div>
+      </div>
+
+      <div id="view-leaderboard" class="content-view">
+        <h2>Лідерборд</h2>
+
+        <div class="leaderboard-filters">
+          <button class="filter-btn active" type="button" data-filter="questions">Кількість питань</button>
+          <button class="filter-btn" type="button" data-filter="accuracy">Точність</button>
+          <button class="filter-btn" type="button" data-filter="math">Математика</button>
+          <button class="filter-btn" type="button" data-filter="ukrainian">Українська мова</button>
+          <button class="filter-btn" type="button" data-filter="history">Історія України</button>
+        </div>
+
+        <div class="leaderboard-list" id="leaderboard-list">
+          <p class="leaderboard-empty" id="leaderboard-empty-note">Завантаження...</p>
+        </div>
+      </div>
+
     </main>
 
     <!-- ПРАВА КОЛОНКА -->

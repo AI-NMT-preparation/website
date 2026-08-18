@@ -1,15 +1,12 @@
 /* =====================================================================
    BOLEST.AI — ЛОГІКА ФРОНТЕНДУ
    =====================================================================
-   Увесь реальний прогрес (рівень, exp, бали з предметів) зберігається
-   на сервері, у файлі-базі db.json (див. server/server.js) — не в
-   localStorage браузера. localStorage тут використовується лише для
-   одного: зберегти токен входу, щоб не вводити пароль щоразу на цьому
-   ж пристрої.
+   Увесь реальний прогрес (рівень, exp, бали з предметів, статистика
+   для аналітики) зберігається в базі даних Supabase (таблиця profiles),
+   а не в localStorage браузера. Supabase сам зберігає токен сесії, тому
+   при повторному відкритті сайту користувач лишається залогіненим.
    ===================================================================== */
 
-/* TODO: коли задеплоїш сервер (Render/Railway/Fly.io) — заміни адресу
-   нижче на свою, наприклад "https://bolest-server.onrender.com/api" */
 // =====================================================================
 // 1. ИНИЦИАЛИЗАЦИЯ SUPABASE
 // =====================================================================
@@ -28,6 +25,54 @@ const SUBJECTS_META = {
   ukrainian: { label: "Українська мова", max: 45 },
   history: { label: "Історія України", max: 54 }
 };
+
+// Кольори предметів — використовуються і в аналітиці, і в легенді графіка
+const SUBJECT_COLORS = {
+  math: "#f472b6",
+  ukrainian: "#facc15",
+  history: "#4ade80"
+};
+
+/* ---------------------------------------------------------------------
+   ДЛЯ АНАЛІТИКИ потрібні нові колонки в таблиці profiles у Supabase.
+   Один раз виконай у Supabase -> SQL Editor:
+
+   ALTER TABLE profiles
+     ADD COLUMN IF NOT EXISTS math_questions integer DEFAULT 0,
+     ADD COLUMN IF NOT EXISTS math_correct integer DEFAULT 0,
+     ADD COLUMN IF NOT EXISTS ukrainian_questions integer DEFAULT 0,
+     ADD COLUMN IF NOT EXISTS ukrainian_correct integer DEFAULT 0,
+     ADD COLUMN IF NOT EXISTS history_questions integer DEFAULT 0,
+     ADD COLUMN IF NOT EXISTS history_correct integer DEFAULT 0,
+     ADD COLUMN IF NOT EXISTS math_history jsonb DEFAULT '[]'::jsonb,
+     ADD COLUMN IF NOT EXISTS ukrainian_history jsonb DEFAULT '[]'::jsonb,
+     ADD COLUMN IF NOT EXISTS history_history jsonb DEFAULT '[]'::jsonb;
+
+   Пояснення:
+   - {subject}_questions / {subject}_correct — рахуються з Навчальних
+     сесій (кожна сесія = 10 питань), звідси беруться "Питань розв'язано"
+     і "Точність" в Аналітиці.
+   - {subject}_history — масив балів (100–200) з усіх пройдених пробних
+     тестів по цьому предмету, по порядку — звідси будується графік.
+   --------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+   ДЛЯ ЛІДЕРБОРДУ потрібно, щоб усі залогінені користувачі могли читати
+   (тільки читати!) чужі рядки з profiles — за замовчуванням Supabase
+   дозволяє людині бачити тільки свій власний рядок. Один раз виконай
+   у Supabase -> SQL Editor:
+
+   CREATE POLICY "Публічне читання для лідерборду"
+   ON profiles FOR SELECT
+   USING (true);
+
+   Це відкриває читання ВСІХ колонок таблиці всім користувачам (не
+   тільки залогіненим) — для нікнейму/балів/аватарки це нормально,
+   бо це й так публічна інформація на лідерборді. Але якщо пізніше
+   додаси в profiles щось приватне (наприклад email) — постав цю
+   інформацію в окрему таблицю або зроби публічний VIEW лише з
+   потрібними колонками, а не відкривай всю таблицю.
+   --------------------------------------------------------------------- */
 
 /* ---------------------------------------------------------------------
    ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ
@@ -199,6 +244,7 @@ finishSetupBtn.addEventListener("click", async () => {
     if (error) throw error;
 
     currentProfile = data;
+    leaderboardCache = null; // дані змінились — оновимо лідерборд при наступному відкритті
     renderDashboard();
     showScreen("screen-dashboard");
   } catch (err) {
@@ -230,6 +276,8 @@ function renderDashboard() {
   renderSubjectRow("math", currentProfile.math_score);
   renderSubjectRow("ukrainian", currentProfile.ukrainian_score);
   renderSubjectRow("history", currentProfile.history_score);
+
+  renderAnalytics();
 }
 
 function renderSubjectRow(subject, rating) {
@@ -245,6 +293,210 @@ function renderSubjectRow(subject, rating) {
     rangeEl.textContent = `Шкала: 100–200 · максимум тестових балів: ${meta.max}`;
   }
 }
+
+/* ---------------------------------------------------------------------
+   АНАЛІТИКА: 3 колонки (питання/точність) + таблиця балів + графік
+   --------------------------------------------------------------------- */
+function renderAnalytics() {
+  if (!currentProfile) return;
+
+  ["math", "ukrainian", "history"].forEach(subject => {
+    const questions = currentProfile[`${subject}_questions`] || 0;
+    const correct = currentProfile[`${subject}_correct`] || 0;
+    const accuracy = questions > 0 ? Math.round((correct / questions) * 100) : 0;
+
+    document.getElementById(`an-${subject}-questions`).textContent = questions;
+    document.getElementById(`an-${subject}-accuracy`).textContent = `${accuracy}%`;
+
+    const rating = currentProfile[`${subject}_score`];
+    document.getElementById(`an-table-${subject}`).textContent =
+      (rating === null || rating === undefined) ? "—" : rating;
+  });
+
+  renderAnalyticsChart();
+}
+
+function renderAnalyticsChart() {
+  const svg = document.getElementById("analytics-chart");
+  const emptyNote = document.getElementById("chart-empty-note");
+  const subjects = ["math", "ukrainian", "history"];
+
+  const histories = {};
+  let hasAnyData = false;
+  let maxLen = 0;
+
+  subjects.forEach(subject => {
+    const hist = currentProfile[`${subject}_history`] || [];
+    histories[subject] = hist;
+    if (hist.length > 0) hasAnyData = true;
+    maxLen = Math.max(maxLen, hist.length);
+  });
+
+  svg.innerHTML = "";
+  emptyNote.style.display = hasAnyData ? "none" : "block";
+  if (!hasAnyData) return;
+
+  const width = 640;
+  const height = 280;
+  const padding = { top: 20, right: 20, bottom: 30, left: 44 };
+  const plotW = width - padding.left - padding.right;
+  const plotH = height - padding.top - padding.bottom;
+
+  const yMin = 100;
+  const yMax = 200;
+
+  const xForIndex = (i) => padding.left + (maxLen === 1 ? plotW / 2 : (i / (maxLen - 1)) * plotW);
+  const yForScore = (score) => padding.top + plotH - ((score - yMin) / (yMax - yMin)) * plotH;
+
+  // горизонтальні напрямні лінії (100 / 150 / 200)
+  [100, 150, 200].forEach(val => {
+    const y = yForScore(val);
+    svg.insertAdjacentHTML("beforeend", `
+      <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}"
+            stroke="#2c2d34" stroke-width="1" />
+      <text x="4" y="${y + 4}" font-size="11" fill="#9a9ba3">${val}</text>
+    `);
+  });
+
+  subjects.forEach(subject => {
+    const hist = histories[subject];
+    if (hist.length === 0) return;
+
+    const points = hist.map((score, i) => `${xForIndex(i)},${yForScore(score)}`).join(" ");
+    svg.insertAdjacentHTML("beforeend", `
+      <polyline points="${points}" fill="none" stroke="${SUBJECT_COLORS[subject]}"
+                stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+    `);
+
+    hist.forEach((score, i) => {
+      svg.insertAdjacentHTML("beforeend", `
+        <circle cx="${xForIndex(i)}" cy="${yForScore(score)}" r="3.5" fill="${SUBJECT_COLORS[subject]}" />
+      `);
+    });
+  });
+}
+
+/* ---------------------------------------------------------------------
+   ПРОФІЛЬ: фото по центру (або "немає фото"), рівень, к-сть питань, опис
+   --------------------------------------------------------------------- */
+function renderProfileView() {
+  if (!currentProfile) return;
+
+  document.getElementById("profile-level").textContent = `Рівень ${currentProfile.level || 1}`;
+
+  const totalQuestions =
+    (currentProfile.math_questions || 0) +
+    (currentProfile.ukrainian_questions || 0) +
+    (currentProfile.history_questions || 0);
+  document.getElementById("profile-questions").textContent = `${totalQuestions} питань`;
+
+  const avatarImg = document.getElementById("profile-avatar-img");
+  const avatarPlaceholder = document.getElementById("profile-avatar-placeholder");
+  if (currentProfile.avatar) {
+    avatarImg.src = currentProfile.avatar;
+    avatarImg.style.display = "block";
+    avatarPlaceholder.style.display = "none";
+  } else {
+    avatarImg.style.display = "none";
+    avatarPlaceholder.style.display = "block";
+  }
+
+  document.getElementById("profile-nickname").textContent = currentProfile.nickname || "—";
+
+  const descEl = document.getElementById("profile-description");
+  descEl.textContent = currentProfile.description ? currentProfile.description : "Опис відсутній";
+}
+
+/* ---------------------------------------------------------------------
+   ЛІДЕРБОРД: список лідерів з фільтром за критерієм
+   --------------------------------------------------------------------- */
+let leaderboardFilter = "questions";
+let leaderboardCache = null; // кешуємо сирі дані, фільтр далі рахуємо на клієнті
+
+async function loadLeaderboard() {
+  const listEl = document.getElementById("leaderboard-list");
+  const emptyNote = document.getElementById("leaderboard-empty-note");
+
+  if (!leaderboardCache) {
+    listEl.innerHTML = `<p class="leaderboard-empty" id="leaderboard-empty-note">Завантаження...</p>`;
+
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('id, nickname, avatar, math_questions, math_correct, ukrainian_questions, ukrainian_correct, history_questions, history_correct, math_score, ukrainian_score, history_score')
+      .limit(200);
+
+    if (error) {
+      listEl.innerHTML = `<p class="leaderboard-empty">Не вдалося завантажити лідерборд: ${error.message}</p>`;
+      return;
+    }
+
+    leaderboardCache = data.map(row => {
+      const totalQuestions =
+        (row.math_questions || 0) + (row.ukrainian_questions || 0) + (row.history_questions || 0);
+      const totalCorrect =
+        (row.math_correct || 0) + (row.ukrainian_correct || 0) + (row.history_correct || 0);
+      const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+
+      return { ...row, totalQuestions, accuracy };
+    });
+  }
+
+  renderLeaderboardList();
+}
+
+function renderLeaderboardList() {
+  const listEl = document.getElementById("leaderboard-list");
+  if (!leaderboardCache) return;
+
+  let rows = [...leaderboardCache];
+  let valueKey; // ключ значення, яке показуємо праворуч
+  let valueSuffix = "";
+
+  if (leaderboardFilter === "questions") {
+    valueKey = "totalQuestions";
+    rows.sort((a, b) => b.totalQuestions - a.totalQuestions);
+  } else if (leaderboardFilter === "accuracy") {
+    valueKey = "accuracy";
+    valueSuffix = "%";
+    rows = rows.filter(r => r.totalQuestions > 0);
+    rows.sort((a, b) => b.accuracy - a.accuracy);
+  } else {
+    // math / ukrainian / history — рейтинг по балах предмета
+    const scoreField = `${leaderboardFilter}_score`;
+    valueKey = scoreField;
+    rows = rows.filter(r => r[scoreField] !== null && r[scoreField] !== undefined);
+    rows.sort((a, b) => b[scoreField] - a[scoreField]);
+  }
+
+  rows = rows.slice(0, 20);
+
+  if (rows.length === 0) {
+    listEl.innerHTML = `<p class="leaderboard-empty">Поки що немає результатів у цій категорії.</p>`;
+    return;
+  }
+
+  listEl.innerHTML = rows.map((row, i) => `
+    <div class="leaderboard-row">
+      <span class="leaderboard-rank">${i + 1}</span>
+      <span class="leaderboard-avatar">
+        ${row.avatar
+          ? `<img src="${row.avatar}" alt="">`
+          : (row.nickname ? row.nickname.charAt(0).toUpperCase() : "?")}
+      </span>
+      <span class="leaderboard-name">${row.nickname || "Без нікнейму"}</span>
+      <span class="leaderboard-value">${row[valueKey]}${valueSuffix}</span>
+    </div>
+  `).join("");
+}
+
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    leaderboardFilter = btn.dataset.filter;
+    renderLeaderboardList();
+  });
+});
 
 /* ---------------------------------------------------------------------
    МОДАЛЬНОЕ ОКНО
@@ -265,10 +517,17 @@ modalOverlay.addEventListener("click", (e) => {
   if (e.target === modalOverlay) closeModal();
 });
 
-// Навчальна сесія (+10 XP за правильный ответ)
+// Навчальна сесія (+10 XP за правильный ответ, + рахує "Питання"/"Точність" в Аналітиці по предмету)
 document.getElementById("btn-session").addEventListener("click", () => {
   openModal(`
     <h3>Навчальна сесія</h3>
+    <label class="modal-field-label" for="session-subject">Предмет</label>
+    <select id="session-subject">
+      <option value="math">Математика</option>
+      <option value="ukrainian">Українська мова</option>
+      <option value="history">Історія України</option>
+    </select>
+
     <p class="modal-hint">Скільки завдань з 10 ви розв'язали правильно?</p>
     <label class="modal-field-label" for="session-correct">Правильних відповідей</label>
     <input type="number" id="session-correct" min="0" max="10" value="0">
@@ -277,6 +536,7 @@ document.getElementById("btn-session").addEventListener("click", () => {
   `);
 
   document.getElementById("session-submit").addEventListener("click", async () => {
+    const subject = document.getElementById("session-subject").value;
     const input = document.getElementById("session-correct");
     const resultEl = document.getElementById("session-result");
     let correct = parseInt(input.value, 10) || 0;
@@ -286,10 +546,18 @@ document.getElementById("btn-session").addEventListener("click", () => {
     const newXp = (currentProfile.xp || 0) + expGained;
     const newLevel = Math.floor(newXp / 100) + 1;
 
+    const newQuestions = (currentProfile[`${subject}_questions`] || 0) + 10;
+    const newCorrect = (currentProfile[`${subject}_correct`] || 0) + correct;
+
     try {
       const { data, error } = await supabaseClient
         .from('profiles')
-        .update({ xp: newXp, level: newLevel })
+        .update({
+          xp: newXp,
+          level: newLevel,
+          [`${subject}_questions`]: newQuestions,
+          [`${subject}_correct`]: newCorrect
+        })
         .eq('id', currentUser.id)
         .select()
         .single();
@@ -297,6 +565,7 @@ document.getElementById("btn-session").addEventListener("click", () => {
       if (error) throw error;
 
       currentProfile = data;
+    leaderboardCache = null; // дані змінились — оновимо лідерборд при наступному відкритті
       renderDashboard();
       resultEl.textContent = `Нараховано +${expGained} exp.`;
     } catch (err) {
@@ -335,14 +604,17 @@ document.getElementById("btn-test").addEventListener("click", () => {
     const resultEl = document.getElementById("test-result");
     let raw = parseInt(rawInput.value, 10) || 0;
 
-    // Условный перевод тестовых баллов в шкалу 100-200
+    // Умовний перевод тестових балів у шкалу 100-200
     const scaledScore = 100 + Math.round((raw / SUBJECTS_META[subject].max) * 100);
     const expGained = 20;
+
+    const newHistory = [...(currentProfile[`${subject}_history`] || []), scaledScore];
 
     const updates = {
       xp: (currentProfile.xp || 0) + expGained,
       level: Math.floor(((currentProfile.xp || 0) + expGained) / 100) + 1,
-      [`${subject}_score`]: scaledScore
+      [`${subject}_score`]: scaledScore,
+      [`${subject}_history`]: newHistory
     };
 
     try {
@@ -356,6 +628,7 @@ document.getElementById("btn-test").addEventListener("click", () => {
       if (error) throw error;
 
       currentProfile = data;
+    leaderboardCache = null; // дані змінились — оновимо лідерборд при наступному відкритті
       renderDashboard();
       resultEl.textContent = `Тест складено! Ваш бал: ${scaledScore} (+${expGained} exp)`;
     } catch (err) {
@@ -378,6 +651,17 @@ document.querySelectorAll(".nav-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
+
+    const nav = btn.dataset.nav;
+    const knownViews = ["tutor", "analytics", "profile", "leaderboard"];
+    if (knownViews.includes(nav)) {
+      document.querySelectorAll(".content-view").forEach(v => v.classList.remove("active"));
+      document.getElementById(`view-${nav}`).classList.add("active");
+
+      if (nav === "analytics") renderAnalytics();
+      if (nav === "profile") renderProfileView();
+      if (nav === "leaderboard") loadLeaderboard();
+    }
   });
 });
 
