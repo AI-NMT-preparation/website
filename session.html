@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolest.ai — Сесія та Тестування</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- ЕКРАН: НАЛАШТУВАННЯ СЕСІЇ (Вибір тем та кількості) -->
+<div id="screen-session-setup" class="screen bg-dark-focused active">
+  <div class="setup-wizard">
+    <h2 id="setup-wizard-title">Що будемо практикувати?</h2>
+    <p class="setup-hint" id="setup-wizard-hint">Обери предмети та теми зі списку</p>
+    
+    <!-- Шаг 1: Вибір тем -->
+    <div id="setup-step-1" class="setup-step active">
+      <div class="topics-selection-container" id="topics-selection-container"></div>
+      <div class="wizard-actions">
+        <button class="secondary-btn btn-back-dash" onclick="window.location.href='dashboard.html'">Назад</button>
+        <button class="primary-btn btn-next" id="setup-btn-next-1">Далі</button>
+      </div>
+    </div>
+
+    <!-- Шаг 2: Вибір кількості питань -->
+    <div id="setup-step-2" class="setup-step">
+      <div id="sliders-container"></div>
+      <div class="wizard-actions">
+        <button class="secondary-btn" id="setup-btn-back-1">Назад</button>
+        <button class="primary-btn btn-next" id="setup-btn-start">Почати сесію</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ЕКРАН: АКТИВНА СЕСІЯ -->
+<div id="screen-active-session" class="screen split-screen">
+  <div class="session-left">
+    <div class="session-header-left">
+      <button class="secondary-btn" onclick="window.location.href='dashboard.html'">Завершити</button>
+    </div>
+    <div class="game-plan-area">
+      <h3>Аналіз та підказки</h3>
+      <div id="ai-messages-area" class="ai-messages">
+        <p class="system-msg">Використовуй підказки, якщо застряг.</p>
+      </div>
+    </div>
+    <div class="hint-buttons-area">
+      <button class="hint-btn color-green" id="btn-give-hint">Дай підказку</button>
+      <button class="hint-btn color-pink" id="btn-explain-step">Пояснення крок за кроком</button>
+    </div>
+  </div>
+  
+  <div class="session-right">
+    <div class="session-header-right">
+      <span id="session-progress-text">1/15</span>
+    </div>
+    <div class="question-container">
+      <p class="question-text" id="session-q-text">Завантаження...</p>
+      <div class="options-grid" id="session-options"></div>
+    </div>
+    <div class="session-footer">
+      <button class="primary-btn" id="btn-session-next" style="display: none;">Далі</button>
+    </div>
+  </div>
+</div>
+
+<!-- ЕКРАН: ПРОБНИЙ ТЕСТ -->
+<div id="screen-mock-test" class="screen split-screen">
+  <div class="session-right mock-test-full">
+    <div class="session-header-right">
+      <button class="secondary-btn" onclick="window.location.href='dashboard.html'">Завершити тест</button>
+      <select id="mock-question-selector" class="question-dropdown"></select>
+    </div>
+    <div class="question-container">
+      <p class="question-text" id="mock-q-text">Завантаження...</p>
+      <div class="options-grid" id="mock-options"></div>
+    </div>
+    <div class="session-footer">
+      <button class="primary-btn" id="btn-mock-next">Далі</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
