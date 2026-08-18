@@ -62,27 +62,41 @@ html, body {
   font-size: 14px;
 }
 
-.google-btn {
+#username-input,
+#password-input {
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  background: #fff;
-  color: #1f1f1f;
-  border: none;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 12px 16px;
-  font-size: 15px;
-  font-weight: 600;
+  color: var(--text-main);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+#username-input:focus,
+#password-input:focus { border-color: var(--accent); }
+
+.auth-switch {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 16px 0 0;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  padding: 0 0 0 4px;
 }
-.google-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(255,255,255,0.15);
-}
-.google-btn:disabled {
+.link-btn:hover { color: var(--accent-hover); text-decoration: underline; }
+
+.primary-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
@@ -91,8 +105,9 @@ html, body {
 .auth-note {
   margin: 14px 0 0;
   font-size: 12px;
-  color: var(--text-muted);
+  color: #f87171;
   min-height: 14px;
+  text-align: center;
 }
 
 /* ---------- Екран налаштування профілю ---------- */
