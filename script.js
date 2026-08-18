@@ -2,7 +2,9 @@
 const SUPABASE_URL = "https://YOUR_SUPABASE_PROJECT.supabase.co";
 const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
 
-const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const supabaseClient = (window.supabase && SUPABASE_URL.includes("supabase.co")) 
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+  : null;
 
 // Стан застосунку
 let currentUser = null;
@@ -23,6 +25,38 @@ function switchScreen(screenId) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   const target = document.getElementById(screenId);
   if (target) target.classList.add("active");
+}
+
+async function loadUserProfile() {
+  if (!currentUser) return;
+
+  // Спроба завантажити з Supabase
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", currentUser.id)
+        .maybeSingle();
+
+      if (!error && data) {
+        userProfile = data;
+        return;
+      }
+    } catch (e) {
+      console.warn("Supabase load error:", e);
+    }
+  }
+
+  // Фолбек: завантаження з localStorage
+  const localData = localStorage.getItem("bolest_profile_" + currentUser.email);
+  if (localData) {
+    try {
+      userProfile = JSON.parse(localData);
+    } catch (e) {
+      userProfile = null;
+    }
+  }
 }
 
 function initAuth() {
@@ -46,10 +80,9 @@ function initAuth() {
       return;
     }
 
-    // Симуляція/вхід через Supabase або збереження сесії
-    currentUser = { id: "user_" + Date.now(), email: username };
+    note.textContent = "";
+    currentUser = { id: "user_" + username.toLowerCase(), email: username.toLowerCase() };
     
-    // Перевірка наявності профілю
     await loadUserProfile();
     
     if (!userProfile || !userProfile.nickname) {
@@ -104,6 +137,7 @@ function initSetupEvents() {
 
     userProfile = {
       id: currentUser ? currentUser.id : "demo_user",
+      email: currentUser ? currentUser.email : "demo",
       nickname: nickname,
       description: description,
       avatar: base64Avatar,
@@ -116,8 +150,18 @@ function initSetupEvents() {
       streak: 1
     };
 
+    // Збереження в localStorage
+    if (currentUser) {
+      localStorage.setItem("bolest_profile_" + currentUser.email, JSON.stringify(userProfile));
+    }
+
+    // Збереження в Supabase при наявності зв'язку
     if (supabaseClient) {
-      await supabaseClient.from("profiles").upsert([userProfile]);
+      try {
+        await supabaseClient.from("profiles").upsert([userProfile]);
+      } catch (e) {
+        console.warn("Supabase save error:", e);
+      }
     }
 
     switchScreen("screen-dashboard");
@@ -165,13 +209,14 @@ async function loadLeaderboard() {
   let profilesData = [];
 
   if (supabaseClient) {
-    const { data, error } = await supabaseClient.from("profiles").select("*");
-    if (!error && data) {
-      profilesData = data;
+    try {
+      const { data, error } = await supabaseClient.from("profiles").select("*");
+      if (!error && data) profilesData = data;
+    } catch (e) {
+      console.warn(e);
     }
   }
 
-  // Фолбек локальними даними для демонстрації
   if (profilesData.length === 0) {
     profilesData = [
       userProfile || { nickname: "Ви", total_score: 525, total_questions: 100, total_correct: 88, streak: 5, total_tests: 12, avatar: "" },
@@ -180,7 +225,6 @@ async function loadLeaderboard() {
     ];
   }
 
-  // Розрахунок точності з округленням до десятих (toFixed(1))
   profilesData = profilesData.map(p => {
     const q = p.total_questions || 0;
     const c = p.total_correct || 0;
@@ -188,7 +232,6 @@ async function loadLeaderboard() {
     return { ...p, accuracyVal: parseFloat(acc) };
   });
 
-  // Сортування залежно від обраного фільтра
   profilesData.sort((a, b) => {
     if (currentLeaderboardFilter === "score") return (b.total_score || 0) - (a.total_score || 0);
     if (currentLeaderboardFilter === "accuracy") return b.accuracyVal - a.accuracyVal;
@@ -202,11 +245,7 @@ async function loadLeaderboard() {
 
 function renderLeaderboardList(rows) {
   const listEl = document.getElementById("leaderboard-list");
-  
-  if (rows.length === 0) {
-    listEl.innerHTML = `<div class="leaderboard-empty">Немає даних для відображення</div>`;
-    return;
-  }
+  if (!listEl) return;
 
   let valueSuffix = "";
   let valueKey = "total_score";
@@ -234,7 +273,6 @@ function renderLeaderboardList(rows) {
 function renderDashboard() {
   if (!userProfile) return;
 
-  // Профіль
   document.getElementById("profile-nickname-display").textContent = userProfile.nickname || "Без нікнейму";
   document.getElementById("profile-description-display").textContent = userProfile.description || "Опис відсутній";
   document.getElementById("profile-level-display").textContent = userProfile.level || 1;
@@ -247,7 +285,6 @@ function renderDashboard() {
     document.getElementById("profile-avatar-placeholder").style.display = "none";
   }
 
-  // Права колонка
   document.getElementById("user-level").textContent = userProfile.level || 1;
   document.getElementById("user-xp").textContent = userProfile.xp || 0;
   const xpPct = Math.min(100, Math.round(((userProfile.xp || 0) / 1000) * 100));
@@ -278,11 +315,14 @@ function initModalEvents() {
       userProfile.total_questions = (userProfile.total_questions || 0) + total;
       userProfile.total_correct = (userProfile.total_correct || 0) + correct;
       userProfile.xp = (userProfile.xp || 0) + correct * 10;
+
+      if (currentUser) {
+        localStorage.setItem("bolest_profile_" + currentUser.email, JSON.stringify(userProfile));
+      }
     }
 
     renderDashboard();
     modal.classList.remove("active");
-    document.getElementById("modal-result-msg").textContent = "Результат успішно збережено!";
   });
 }
 
@@ -313,7 +353,6 @@ function updateAnalyticsTable() {
     `;
   }).join("");
 
-  // Загальна статистика
   const totalTests = testSessions.length;
   const totalCorrectAll = testSessions.reduce((acc, curr) => acc + curr.correct, 0);
   const totalQuestionsAll = testSessions.reduce((acc, curr) => acc + curr.total, 0);
