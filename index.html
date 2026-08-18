@@ -1,55 +1,259 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bolest.ai — Вхід та Налаштування</title>
-<link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BOLEST.AI — Підготовка до НМТ</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<!-- ЕКРАН 1: ВХІД / РЕЄСТРАЦІЯ -->
-<div id="screen-login" class="screen active">
-  <div class="auth-card">
-    <h1 class="logo-text">Bolest<span class="accent-text">.ai</span></h1>
-    <p class="auth-subtitle" id="auth-mode-subtitle">Увійдіть у свій акаунт</p>
-    <label class="field-label" for="email-input">Email</label>
-    <input type="email" id="email-input" placeholder="example@mail.com" autocomplete="email">
-    <label class="field-label" for="password-input">Пароль</label>
-    <input type="password" id="password-input" placeholder="Введіть пароль" autocomplete="current-password">
-    <button id="auth-submit-btn" class="primary-btn" type="button">Увійти</button>
-    <p class="auth-switch">
-      <span id="auth-switch-text">Немає акаунту?</span>
-      <button id="auth-switch-btn" class="link-btn" type="button">Зареєструватися</button>
-    </p>
-    <p class="auth-note" id="auth-note"></p>
-  </div>
-</div>
-
-<!-- ЕКРАН 2: НАЛАШТУВАННЯ ПРОФІЛЮ -->
-<div id="screen-setup" class="screen">
-  <div class="auth-card setup-card">
-    <h2>Налаштування профілю</h2>
-    <div class="avatar-upload">
-      <label for="avatar-input" class="avatar-preview" id="avatar-preview">
-        <span id="avatar-placeholder">+</span>
-        <img id="avatar-img" src="" alt="Фото профілю" style="display:none">
-      </label>
-      <input type="file" id="avatar-input" accept="image/*" hidden>
-      <p class="hint">Фото профілю (не обов'язково)</p>
+  <!-- МОДАЛЬНЕ ВІКНО -->
+  <div id="modal-overlay" class="modal-overlay">
+    <div class="modal-box">
+      <button id="modal-close" class="modal-close-btn">&times;</button>
+      <div id="modal-content"></div>
     </div>
-    <label class="field-label" for="nickname-input">Нікнейм</label>
-    <input type="text" id="nickname-input" placeholder="Введіть нікнейм" maxlength="20">
-    <label class="field-label" for="description-input">Опис профілю</label>
-    <div class="description-row">
-      <textarea id="description-input" placeholder="Розкажіть трохи про себе..." maxlength="150"></textarea>
-      <button id="random-quote-btn" class="secondary-btn" type="button">Випадкова цитата</button>
-    </div>
-    <button id="finish-setup-btn" class="primary-btn" type="button" onclick="window.location.href='dashboard.html'">Почати навчання</button>
   </div>
-</div>
 
-<script src="script.js"></script>
+  <!-- ЕКРАН 1: АВТОРИЗАЦІЯ -->
+  <div id="screen-auth" class="screen active">
+    <div class="auth-container">
+      <div class="auth-card">
+        <h1 class="auth-logo">BOLEST<span>.AI</span></h1>
+        <p id="auth-mode-subtitle" class="auth-subtitle">Увійдіть у свій акаунт</p>
+        
+        <div class="auth-form">
+          <label class="auth-label">Email</label>
+          <input type="email" id="email-input" class="auth-input" placeholder="name@example.com">
+          
+          <label class="auth-label">Пароль</label>
+          <input type="password" id="password-input" class="auth-input" placeholder="••••••••">
+          
+          <button id="auth-submit-btn" class="auth-btn" type="button">Увійти</button>
+          <p id="auth-note" class="auth-note"></p>
+          
+          <div class="auth-switch-row">
+            <span id="auth-switch-text">Немає акаунту?</span>
+            <button id="auth-switch-btn" class="auth-switch-link" type="button">Зареєструватися</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ЕКРАН 2: НАЛАШТУВАННЯ ПРОФІЛЮ -->
+  <div id="screen-setup" class="screen">
+    <div class="setup-container">
+      <div class="setup-card">
+        <h2>Налаштування профілю</h2>
+        <p class="setup-subtitle">Розкажіть трохи про себе перед початком</p>
+        
+        <div class="setup-avatar-section">
+          <div class="setup-avatar-preview">
+            <img id="avatar-img" src="" alt="Avatar" style="display: none;">
+            <span id="avatar-placeholder">?</span>
+          </div>
+          <label class="setup-file-label">
+            Обрати аватарку
+            <input type="file" id="avatar-input" accept="image/*" style="display: none;">
+          </label>
+        </div>
+
+        <label class="auth-label">Нікнейм</label>
+        <input type="text" id="nickname-input" class="auth-input" placeholder="Ваше ім'я або нік">
+
+        <label class="auth-label">Статус або мета</label>
+        <div class="setup-quote-row">
+          <input type="text" id="description-input" class="auth-input" placeholder="Наприклад: Здати НМТ на 200 балів!">
+          <button id="random-quote-btn" class="secondary-btn" type="button">Випадкова</button>
+        </div>
+
+        <button id="finish-setup-btn" class="auth-btn" type="button" style="margin-top: 24px;">Зберегти і продовжити</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ЕКРАН 3: ГОЛОВНИЙ ІНТЕРФЕЙС -->
+  <div id="screen-dashboard" class="screen">
+    <div class="dashboard-layout">
+      
+      <!-- БОКОВА ПАНЕЛЬ -->
+      <aside class="sidebar">
+        <div class="sidebar-logo">BOLEST<span>.AI</span></div>
+        <nav class="sidebar-nav">
+          <button class="nav-btn active" data-nav="dashboard">Головна</button>
+          <button class="nav-btn" data-nav="analytics">Аналітика</button>
+          <button class="nav-btn" data-nav="leaderboard">Рейтинг</button>
+          <button class="nav-btn" data-nav="profile">Профіль</button>
+        </nav>
+      </aside>
+
+      <!-- ОСНОВНИЙ КОНТЕНТ -->
+      <main class="main-content">
+        
+        <!-- ВКЛАДКА: ГОЛОВНА -->
+        <div id="view-dashboard" class="content-view active">
+          <header class="content-header">
+            <div>
+              <h1>Головна панель</h1>
+              <p>Ваш прогрес підготовки до Національного мультипредметного тесту</p>
+            </div>
+            <div class="level-badge-box">
+              <span id="level-title">Рівень 1</span>
+              <div class="level-bar"><div id="xp-fill" class="level-fill" style="width: 0%;"></div></div>
+              <span id="level-points" class="level-pts">0/100</span>
+            </div>
+          </header>
+
+          <div class="dashboard-grid">
+            <div class="card subject-card">
+              <h3>Математика</h3>
+              <div class="score-display"><span id="score-math">—</span><span>/ 200</span></div>
+              <p id="range-math" class="range-note">Ще не складали</p>
+            </div>
+            <div class="card subject-card">
+              <h3>Українська мова</h3>
+              <div class="score-display"><span id="score-ukrainian">—</span><span>/ 200</span></div>
+              <p id="range-ukrainian" class="range-note">Ще не складали</p>
+            </div>
+            <div class="card subject-card">
+              <h3>Історія України</h3>
+              <div class="score-display"><span id="score-history">—</span><span>/ 200</span></div>
+              <p id="range-history" class="range-note">Ще не складали</p>
+            </div>
+          </div>
+
+          <div class="actions-row">
+            <button id="btn-session" class="primary-btn">Почати навчальну сесію</button>
+            <button id="btn-review" class="secondary-btn">Лабораторія повторення</button>
+          </div>
+
+          <div class="card mt-24">
+            <h3>Пріоритетні теми для опрацювання</h3>
+            <div id="priorities-list" class="sessions-grid"></div>
+          </div>
+        </div>
+
+        <!-- ВКЛАДКА: АНАЛІТИКА -->
+        <div id="view-analytics" class="content-view">
+          <header class="content-header">
+            <h1>Аналітика та динаміка</h1>
+            <p>Графіки зростання балів та детальна статистика по предметах</p>
+          </header>
+
+          <div class="card">
+            <h3>Динаміка результатів тестів</h3>
+            <div class="chart-container">
+              <svg id="analytics-chart" width="640" height="280"></svg>
+              <div id="chart-empty-note" class="chart-empty">Недостатньо даних для побудови графіка</div>
+            </div>
+          </div>
+
+          <div class="analytics-grid mt-24">
+            <div class="card">
+              <h4>Математика</h4>
+              <p>Питань розв'язано: <strong id="an-math-questions">0</strong></p>
+              <p>Точність: <strong id="an-math-accuracy">0%</strong></p>
+              <p>Останній бал: <strong id="an-table-math">—</strong></p>
+            </div>
+            <div class="card">
+              <h4>Українська мова</h4>
+              <p>Питань розв'язано: <strong id="an-ukrainian-questions">0</strong></p>
+              <p>Точність: <strong id="an-ukrainian-accuracy">0%</strong></p>
+              <p>Останній бал: <strong id="an-table-ukrainian">—</strong></p>
+            </div>
+            <div class="card">
+              <h4>Історія України</h4>
+              <p>Питань розв'язано: <strong id="an-history-questions">0</strong></p>
+              <p>Точність: <strong id="an-history-accuracy">0%</strong></p>
+              <p>Останній бал: <strong id="an-table-history">—</strong></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ВКЛАДКА: РЕЙТИНГ -->
+        <div id="view-leaderboard" class="content-view">
+          <header class="content-header">
+            <h1>Таблиця лідерів</h1>
+            <p>Змагайтеся з іншими учнями за першість у рейтингу</p>
+          </header>
+
+          <div class="filters-row">
+            <button class="filter-btn active" data-filter="questions">За питаннями</button>
+            <button class="filter-btn" data-filter="accuracy">За точністю</button>
+            <button class="filter-btn" data-filter="math">Математика</button>
+            <button class="filter-btn" data-filter="ukrainian">Укр. мова</button>
+            <button class="filter-btn" data-filter="history">Історія</button>
+          </div>
+
+          <div class="card mt-16">
+            <div id="leaderboard-list" class="leaderboard-container">
+              <p class="leaderboard-empty">Завантаження...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ВКЛАДКА: ПРОФІЛЬ -->
+        <div id="view-profile" class="content-view">
+          <header class="content-header">
+            <h1>Мій профіль</h1>
+            <p>Особисті дані та статистика акаунта</p>
+          </header>
+
+          <div class="card profile-card-box">
+            <div class="profile-avatar-large">
+              <img id="profile-avatar-img" src="" alt="Avatar" style="display: none;">
+              <span id="profile-avatar-placeholder">?</span>
+            </div>
+            <div class="profile-info-box">
+              <h2 id="profile-nickname">—</h2>
+              <p id="profile-description" class="profile-desc">Опис відсутній</p>
+              <div class="profile-badges-row">
+                <span id="profile-level" class="badge">Рівень 1</span>
+                <span id="profile-questions" class="badge">0 питань</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ЕКРАН 4: НАВЧАЛЬНА СЕСІЯ -->
+  <div id="screen-session" class="screen">
+    <div class="session-box">
+      <div class="session-top-bar">
+        <button id="session-exit-btn" class="secondary-btn">Вийти</button>
+        <div class="session-progress-bar-container">
+          <div id="session-progress-label" class="session-progress-text">Питання 1 з 10</div>
+          <div class="level-bar"><div id="session-progress-fill" class="level-fill" style="width: 10%;"></div></div>
+        </div>
+        <span id="session-topic-label" class="session-topic-badge">Тема</span>
+      </div>
+
+      <div class="card session-card-main">
+        <p id="session-question-text" class="session-q-text">Завантаження питання...</p>
+        <div id="session-options" class="session-options-list"></div>
+        
+        <div class="session-controls">
+          <button id="session-next-btn" class="primary-btn" style="display: none;">Наступне питання</button>
+          <button id="session-finish-btn" class="primary-btn" style="display: none;">Завершити сесію</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ЕКРАН 5: ТЕСТ -->
+  <div id="screen-test" class="screen">
+    <div class="session-box">
+      <button id="test-exit-btn" class="secondary-btn">Вийти</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
