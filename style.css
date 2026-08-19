@@ -1691,3 +1691,397 @@ html, body {
 
   .streak-block { display: none !important; }
 }
+
+/* ============================================================
+   BOLEST.AI — CURRENT INDEX.HTML ADAPTER
+   Этот блок адаптирует старый рабочий style.css к текущему
+   DOM (.dashboard-layout / .sidebar / .main-content).
+   HTML и JS НЕ меняем.
+   ============================================================ */
+
+/* ---------- Dashboard shell ---------- */
+#screen-dashboard.active {
+  display: block !important;
+  min-height: 100vh !important;
+  width: 100% !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+}
+
+.dashboard-layout {
+  width: min(1120px, calc(100vw - 40px)) !important;
+  min-height: 100vh !important;
+  margin: 0 auto !important;
+  padding: 28px 0 50px !important;
+  display: grid !important;
+  grid-template-columns: 190px minmax(0, 1fr) !important;
+  gap: 20px !important;
+  align-items: start !important;
+}
+
+/* ---------- Left sidebar ---------- */
+.sidebar {
+  width: 190px !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  position: sticky !important;
+  top: 24px !important;
+  align-self: start !important;
+}
+
+.sidebar-logo {
+  padding: 2px 4px 4px !important;
+  font-size: 22px !important;
+  line-height: 1.1 !important;
+}
+
+.sidebar-nav {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  padding: 8px !important;
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+.sidebar-nav .nav-btn {
+  width: 100% !important;
+  min-height: 38px !important;
+  padding: 9px 10px !important;
+  border-radius: 8px !important;
+  color: var(--text-main) !important;
+  background: transparent !important;
+  border: 0 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-align: left !important;
+}
+
+.sidebar-nav .nav-btn.active {
+  color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+}
+
+/* ---------- Main area ---------- */
+.main-content {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* ---------- Main dashboard ---------- */
+#view-dashboard.active {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 280px !important;
+  grid-template-rows: auto auto auto !important;
+  gap: 16px !important;
+  align-items: start !important;
+}
+
+#view-dashboard .content-header {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+}
+
+#view-dashboard .content-header h1 {
+  margin: 0 !important;
+  font-size: 20px !important;
+  line-height: 1.25 !important;
+}
+
+#view-dashboard .content-header p {
+  margin: 6px 0 0 !important;
+  color: var(--text-muted) !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+}
+
+/* Level block is in the current header, not in a separate sidebar. */
+.level-badge-box {
+  flex: 0 0 210px !important;
+  width: 210px !important;
+  padding: 12px 14px !important;
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+/* Three subjects must remain separate cards in the center column. */
+#view-dashboard .dashboard-grid {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  min-width: 0 !important;
+}
+
+#view-dashboard .subject-card {
+  width: 100% !important;
+  min-height: 92px !important;
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--border-color) !important;
+  border-bottom: 0 !important;
+  border-radius: 0 !important;
+  padding: 18px !important;
+}
+
+#view-dashboard .subject-card:first-child {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+}
+
+#view-dashboard .subject-card:last-child {
+  border-bottom: 1px solid var(--border-color) !important;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg) !important;
+}
+
+/* Main action row under subjects. */
+#view-dashboard .actions-row {
+  grid-column: 1 !important;
+  grid-row: 3 !important;
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+}
+
+#view-dashboard .actions-row .primary-btn,
+#view-dashboard .actions-row .secondary-btn {
+  width: 100% !important;
+  min-height: 38px !important;
+  margin: 0 !important;
+}
+
+/* Priority card is a separate right section. */
+#view-dashboard > .card.mt-24 {
+  grid-column: 2 !important;
+  grid-row: 2 / span 2 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+#view-dashboard > .card.mt-24 h3 {
+  margin: 0 0 10px !important;
+  font-size: 14px !important;
+}
+
+#view-dashboard .sessions-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 420px !important;
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+}
+
+/* ---------- Analytics: HEADER -> STATS -> GRAPH ---------- */
+#view-analytics.active {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+}
+
+#view-analytics .content-header {
+  order: 1 !important;
+  margin-bottom: 16px !important;
+}
+
+#view-analytics .analytics-grid {
+  order: 2 !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin: 0 !important;
+}
+
+#view-analytics > .card {
+  order: 3 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 16px 0 0 !important;
+}
+
+#view-analytics .chart-container {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+#analytics-chart {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 300px !important;
+}
+
+/* ---------- Other tabs ---------- */
+#view-leaderboard,
+#view-profile {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+#view-leaderboard .card,
+#view-profile .card {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* ---------- Session/test: keep current HTML functional ---------- */
+#screen-session.active,
+#screen-test.active {
+  display: block !important;
+  min-height: 100vh !important;
+  width: 100% !important;
+  padding: 32px 0 !important;
+}
+
+.session-box {
+  width: min(820px, calc(100vw - 32px)) !important;
+  margin: 0 auto !important;
+}
+
+.session-card-main {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.session-options-list {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.session-options-list .session-option {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* ---------- Modal safety ---------- */
+#modal-content {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  max-height: min(80vh, 720px) !important;
+  overflow-y: auto !important;
+}
+
+/* ---------- Long topic names ---------- */
+.subject-card,
+.card,
+.content-header,
+.session-item,
+.analytics-grid > .card {
+  min-width: 0 !important;
+}
+
+.subject-card h3,
+.content-header p,
+.session-item > div {
+  overflow-wrap: anywhere !important;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1050px) {
+  .dashboard-layout {
+    width: min(calc(100% - 32px), 900px) !important;
+    grid-template-columns: 170px minmax(0, 1fr) !important;
+  }
+
+  .sidebar {
+    width: 170px !important;
+  }
+
+  #view-dashboard.active {
+    grid-template-columns: minmax(0, 1fr) 230px !important;
+  }
+
+  .level-badge-box {
+    flex-basis: 200px !important;
+    width: 200px !important;
+  }
+
+  #view-analytics .analytics-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 820px) {
+  .dashboard-layout {
+    width: calc(100% - 24px) !important;
+    grid-template-columns: 1fr !important;
+    padding: 18px 0 32px !important;
+  }
+
+  .sidebar {
+    width: 100% !important;
+    position: static !important;
+  }
+
+  .sidebar-nav {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+
+  #view-dashboard.active {
+    grid-template-columns: 1fr !important;
+  }
+
+  #view-dashboard .content-header,
+  #view-dashboard .dashboard-grid,
+  #view-dashboard > .card.mt-24,
+  #view-dashboard .actions-row {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+  }
+
+  #view-dashboard .content-header {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  .level-badge-box {
+    width: 100% !important;
+    flex-basis: auto !important;
+  }
+
+  #view-dashboard > .card.mt-24 {
+    max-height: none !important;
+  }
+
+  #view-dashboard .sessions-grid {
+    max-height: 360px !important;
+  }
+
+  #view-analytics .analytics-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboard-layout {
+    width: calc(100% - 16px) !important;
+    padding-top: 12px !important;
+  }
+
+  .sidebar-nav {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  #view-dashboard .actions-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .session-top-bar {
+    grid-template-columns: 1fr !important;
+  }
+}
