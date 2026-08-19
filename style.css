@@ -1119,36 +1119,38 @@ html, body {
    FINAL VISUAL TUNING — larger dashboard scale
    ================================================================ */
 #screen-dashboard .app-layout {
-  width: min(1240px, calc(100vw - 40px));
-  max-width: 1240px;
-  grid-template-columns: 220px minmax(0, 1fr) 275px;
-  gap: 18px;
-  padding: 22px 0;
+  /* Компактный центрированный макет — как в исходном дизайне.
+     Не растягиваем dashboard на весь экран. */
+  width: min(980px, calc(100vw - 32px));
+  max-width: 980px;
+  grid-template-columns: 175px minmax(0, 1fr) 220px;
+  gap: 14px;
+  padding: 20px 0;
 }
 
 #screen-dashboard .content-center {
-  min-height: 560px;
-  padding: 30px;
+  min-height: 500px;
+  padding: 24px;
 }
 
-#screen-dashboard .logo { font-size: 23px; }
-#screen-dashboard .nav-btn { font-size: 13px; padding: 11px 13px; }
+#screen-dashboard .logo { font-size: 21px; }
+#screen-dashboard .nav-btn { font-size: 12px; padding: 10px 12px; }
 #screen-dashboard .subject-name,
-#screen-dashboard .subject-range { font-size: 12px; }
-#screen-dashboard .subject-score { font-size: 18px; }
+#screen-dashboard .subject-range { font-size: 11px; }
+#screen-dashboard .subject-score { font-size: 17px; }
 
 #screen-dashboard .sidebar-right {
-  gap: 12px;
+  gap: 10px;
 }
 
 #screen-dashboard .level-block,
 #screen-dashboard .stats-block,
 #screen-dashboard .priorities-block {
-  padding: 16px;
+  padding: 14px;
 }
 
 #screen-dashboard .priorities-list {
-  max-height: 350px;
+  max-height: 330px;
 }
 
 /* Session setup wizard */
