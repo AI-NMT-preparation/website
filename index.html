@@ -76,12 +76,12 @@
     </div>
   </div>
 
-  <!-- ЕКРАН 3: ГОЛОВНИЙ ІНТЕРФЕЙС (3 КОЛОНКИ) -->
+  <!-- ЕКРАН 3: ГОЛОВНИЙ ІНТЕРФЕЙС -->
   <div id="screen-dashboard" class="screen">
-    <div class="app-layout dashboard-layout">
+    <div class="dashboard-layout">
       
-      <!-- 1. ЛІВА КОЛОНКА: Лого, Навігація та Бали -->
-      <aside class="sidebar sidebar-left">
+      <!-- БОКОВА ПАНЕЛЬ -->
+      <aside class="sidebar">
         <div class="sidebar-logo">BOLEST<span>.AI</span></div>
         <nav class="sidebar-nav">
           <button class="nav-btn active" data-nav="dashboard">Головна</button>
@@ -89,27 +89,10 @@
           <button class="nav-btn" data-nav="leaderboard">Рейтинг</button>
           <button class="nav-btn" data-nav="profile">Профіль</button>
         </nav>
-
-        <!-- Блок прогнозу балів у лівій колонці -->
-        <div class="card score-block-side" style="margin-top: auto; padding: 16px;">
-          <h4 style="margin-bottom: 12px; font-size: 14px; color: #aaa;">Прогноз балів</h4>
-          <div class="subject-row" style="margin-bottom: 8px;">
-            <span style="font-size: 13px;">Математика</span>
-            <div><strong id="score-math">—</strong><span style="font-size: 12px; color: #888;">/200</span></div>
-          </div>
-          <div class="subject-row" style="margin-bottom: 8px;">
-            <span style="font-size: 13px;">Укр. мова</span>
-            <div><strong id="score-ukrainian">—</strong><span style="font-size: 12px; color: #888;">/200</span></div>
-          </div>
-          <div class="subject-row">
-            <span style="font-size: 13px;">Історія</span>
-            <div><strong id="score-history">—</strong><span style="font-size: 12px; color: #888;">/200</span></div>
-          </div>
-        </div>
       </aside>
 
-      <!-- 2. ЦЕНТРАЛЬНА КОЛОНКА: Основний контент / Вкладки -->
-      <main class="main-content content-center">
+      <!-- ОСНОВНИЙ КОНТЕНТ -->
+      <main class="main-content">
         
         <!-- ВКЛАДКА: ГОЛОВНА -->
         <div id="view-dashboard" class="content-view active">
@@ -118,24 +101,39 @@
               <h1>Головна панель</h1>
               <p>Ваш прогрес підготовки до Національного мультипредметного тесту</p>
             </div>
+            <div class="level-badge-box">
+              <span id="level-title">Рівень 1</span>
+              <div class="level-bar"><div id="xp-fill" class="level-fill" style="width: 0%;"></div></div>
+              <span id="level-points" class="level-pts">0/100</span>
+            </div>
           </header>
 
           <div class="dashboard-grid">
             <div class="card subject-card">
               <h3>Математика</h3>
-              <div class="score-display"><span id="score-math-card">—</span><span>/ 200</span></div>
+              <div class="score-display"><span id="score-math">—</span><span>/ 200</span></div>
               <p id="range-math" class="range-note">Ще не складали</p>
             </div>
             <div class="card subject-card">
               <h3>Українська мова</h3>
-              <div class="score-display"><span id="score-ukrainian-card">—</span><span>/ 200</span></div>
+              <div class="score-display"><span id="score-ukrainian">—</span><span>/ 200</span></div>
               <p id="range-ukrainian" class="range-note">Ще не складали</p>
             </div>
             <div class="card subject-card">
               <h3>Історія України</h3>
-              <div class="score-display"><span id="score-history-card">—</span><span>/ 200</span></div>
+              <div class="score-display"><span id="score-history">—</span><span>/ 200</span></div>
               <p id="range-history" class="range-note">Ще не складали</p>
             </div>
+          </div>
+
+          <div class="actions-row">
+            <button id="btn-session" class="primary-btn">Почати навчальну сесію</button>
+            <button id="btn-review" class="secondary-btn">Лабораторія повторення</button>
+          </div>
+
+          <div class="card mt-24">
+            <h3>Пріоритетні теми для опрацювання</h3>
+            <div id="priorities-list" class="sessions-grid"></div>
           </div>
         </div>
 
@@ -222,29 +220,6 @@
         </div>
 
       </main>
-
-      <!-- 3. ПРАВА КОЛОНКА: Рівень, Кнопки та Пріоритети -->
-      <aside class="sidebar sidebar-right">
-        <!-- Блок рівня -->
-        <div class="card level-badge-box" style="margin-bottom: 20px;">
-          <span id="level-title" style="font-weight: 600;">Рівень 1</span>
-          <div class="level-bar" style="margin: 8px 0;"><div id="xp-fill" class="level-fill" style="width: 0%;"></div></div>
-          <span id="level-points" class="level-pts" style="font-size: 12px; color: #888;">0/100</span>
-        </div>
-
-        <!-- Кнопки дій -->
-        <div class="actions-row" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-          <button id="btn-session" class="primary-btn" style="width: 100%;">Почати навчальну сесію</button>
-          <button id="btn-review" class="secondary-btn" style="width: 100%;">Лабораторія повторення</button>
-        </div>
-
-        <!-- Пріоритетні теми -->
-        <div class="card" style="flex: 1;">
-          <h3 style="font-size: 15px; margin-bottom: 12px;">Пріоритетні теми</h3>
-          <div id="priorities-list" class="sessions-grid"></div>
-        </div>
-      </aside>
-
     </div>
   </div>
 
@@ -279,6 +254,6 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="script(1).js"></script>
 </body>
 </html>
