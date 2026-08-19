@@ -1565,3 +1565,129 @@ html, body {
   .topic-picker-actions .secondary-btn,
   .topic-picker-actions .modal-submit-btn { width: 100%; }
 }
+
+/* ==================== ОСТАТОЧНИЙ LAYOUT DASHBOARD ====================
+   На десктопі: ліва колонка | основний блок | ОДНА права колонка.
+   Рівень, статистика та пріоритети більше не розносяться по різних grid-колонках. */
+@media (min-width: 1201px) {
+  .app-layout {
+    display: grid !important;
+    grid-template-columns: 195px minmax(0, 630px) 280px !important;
+    grid-template-rows: auto !important;
+    column-gap: 20px !important;
+    row-gap: 0 !important;
+    width: min(1125px, calc(100vw - 48px)) !important;
+    max-width: 1125px !important;
+    margin: 0 auto !important;
+    padding: 42px 0 50px !important;
+    align-items: start !important;
+  }
+
+  .sidebar-left {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .content-center {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 378px !important;
+    padding: 24px 20px !important;
+  }
+
+  /* Весь правий блок — одна вертикальна колонка. */
+  .sidebar-right {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    width: 280px !important;
+    min-width: 0 !important;
+    align-self: start !important;
+  }
+
+  .level-block,
+  .stats-block,
+  .priorities-block,
+  .action-buttons {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .level-block {
+    min-height: 62px !important;
+  }
+
+  .stats-block {
+    min-height: 78px !important;
+  }
+
+  .priorities-block {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: 390px !important;
+  }
+
+  .priorities-list {
+    max-height: 320px !important;
+    overflow-y: auto !important;
+  }
+
+  .action-buttons {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .action-btn {
+    min-width: 0 !important;
+  }
+
+  .action-btn.wide {
+    grid-column: 1 / -1 !important;
+  }
+
+  .streak-block {
+    display: none !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .app-layout {
+    display: grid !important;
+    grid-template-columns: 180px minmax(0, 1fr) 280px !important;
+    grid-template-rows: auto !important;
+    gap: 16px !important;
+    width: min(1050px, calc(100vw - 32px)) !important;
+    padding: 24px 0 40px !important;
+  }
+
+  .sidebar-left { grid-column: 1 !important; grid-row: 1 !important; }
+  .content-center { grid-column: 2 !important; grid-row: 1 !important; min-width: 0 !important; }
+  .sidebar-right {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    min-width: 0 !important;
+  }
+
+  .level-block,
+  .stats-block,
+  .priorities-block,
+  .action-buttons {
+    width: 100% !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+
+  .streak-block { display: none !important; }
+}
