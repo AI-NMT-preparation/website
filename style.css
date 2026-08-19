@@ -1352,3 +1352,216 @@ html, body {
     display: none !important;
   }
 }
+
+/* ==================== ФІНАЛЬНИЙ ФІКС LAYOUT ====================
+   Один стабільний grid без накладання блоків. */
+@media (min-width: 1201px) {
+  .app-layout {
+    display: grid;
+    grid-template-columns: 200px minmax(520px, 1fr) 190px 330px 190px;
+    gap: 16px;
+    width: min(100% - 48px, 1500px);
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 34px 0 50px;
+    align-items: start;
+  }
+
+  .sidebar-left,
+  .content-center,
+  .sidebar-right {
+    min-width: 0;
+  }
+
+  .sidebar-left {
+    grid-column: 1;
+    grid-row: 1;
+    gap: 16px;
+  }
+
+  .content-center {
+    grid-column: 2;
+    grid-row: 1;
+    width: auto;
+    min-height: 440px;
+    padding: 28px 24px;
+  }
+
+  .sidebar-right {
+    display: contents !important;
+  }
+
+  .level-block {
+    grid-column: 3;
+    grid-row: 1;
+    width: auto;
+    min-width: 0;
+  }
+
+  .stats-block {
+    grid-column: 3;
+    grid-row: 2;
+    width: auto;
+    min-width: 0;
+    align-self: start;
+  }
+
+  .priorities-block {
+    grid-column: 4;
+    grid-row: 1 / span 2;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    min-height: 430px;
+  }
+
+  .priorities-list {
+    max-height: 355px;
+  }
+
+  .action-buttons {
+    grid-column: 5;
+    grid-row: 1;
+    width: auto;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    align-self: start;
+  }
+
+  .action-btn {
+    min-width: 0;
+    min-height: 52px;
+    padding: 9px 7px;
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  .action-btn.wide {
+    min-height: 46px;
+  }
+
+  .streak-block { display: none !important; }
+}
+
+/* Середні екрани: не стискаємо 5 колонок до стану, де вони починають наїжджати. */
+@media (min-width: 901px) and (max-width: 1200px) {
+  .app-layout {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr) 280px;
+    gap: 16px;
+    width: min(100% - 32px, 1050px);
+    padding: 24px 0 40px;
+  }
+
+  .sidebar-left { grid-column: 1; grid-row: 1; }
+  .content-center { grid-column: 2; grid-row: 1; min-width: 0; }
+  .sidebar-right {
+    grid-column: 3;
+    grid-row: 1;
+    display: flex !important;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .level-block,
+  .stats-block,
+  .priorities-block,
+  .action-buttons {
+    width: 100%;
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+
+  .priorities-block { min-height: 300px; }
+  .action-buttons { display: grid; }
+  .streak-block { display: none !important; }
+}
+
+/* ==================== ФІНАЛЬНИЙ ФІКС МОДАЛКИ СЕСІЇ ==================== */
+#modal-content { min-width: 0; }
+#modal-content .session-setup-title {
+  margin: 0 28px 8px 0;
+  font-size: 20px;
+}
+#modal-content .session-setup-subtitle {
+  margin: 0 0 18px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.topic-picker-subject {
+  padding: 12px 0;
+  border-top: 1px solid var(--border-color);
+}
+.topic-picker-subject:first-child { border-top: none; }
+.topic-picker-subject h4 { font-size: 14px; }
+.topic-checkbox-row {
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.topic-checkbox-row:hover { background: var(--bg-panel-alt); }
+.topic-checkbox-row.subject-all {
+  margin-bottom: 4px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.topic-picker-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+.topic-picker-actions .secondary-btn,
+.topic-picker-actions .modal-submit-btn {
+  width: auto;
+  min-width: 130px;
+  margin-top: 0;
+}
+
+.question-count-list {
+  max-height: 430px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+.question-count-group {
+  padding: 10px 0;
+  border-top: 1px solid var(--border-color);
+}
+.question-count-group:first-child { border-top: none; }
+.question-count-group h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.question-count-row {
+  padding: 12px 0;
+  border-top: 1px solid var(--border-color);
+}
+.question-count-row:first-of-type { border-top: none; }
+.question-count-row .slider-row-label {
+  gap: 12px;
+  line-height: 1.35;
+}
+.session-question-range {
+  display: block;
+  width: 100%;
+  margin: 8px 0 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .app-layout {
+    width: calc(100% - 20px);
+    padding: 14px 0 28px;
+  }
+  .content-center { padding: 20px 16px; }
+  .modal-box { max-width: calc(100% - 24px); padding: 22px 18px; }
+  .topic-picker-actions { flex-direction: column-reverse; }
+  .topic-picker-actions .secondary-btn,
+  .topic-picker-actions .modal-submit-btn { width: 100%; }
+}
