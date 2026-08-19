@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BOLEST.AI — Підготовка до НМТ</title>
-  <link rel="stylesheet" href="style.css?v=dashboard-v2">
+  <link rel="stylesheet" href="style.css?v=dashboard-v3">
   <!-- Supabase SDK must load before app logic -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="script.js"></script>
@@ -27,17 +27,17 @@
       <div class="auth-card">
         <h1 class="auth-logo">BOLEST<span>.AI</span></h1>
         <p id="auth-mode-subtitle" class="auth-subtitle">Увійдіть у свій акаунт</p>
-        
+
         <div class="auth-form">
           <label class="auth-label">Email</label>
           <input type="email" id="email-input" class="auth-input" placeholder="name@example.com">
-          
+
           <label class="auth-label">Пароль</label>
           <input type="password" id="password-input" class="auth-input" placeholder="••••••••">
-          
+
           <button id="auth-submit-btn" class="auth-btn" type="button">Увійти</button>
           <p id="auth-note" class="auth-note"></p>
-          
+
           <div class="auth-switch-row">
             <span id="auth-switch-text">Немає акаунту?</span>
             <button id="auth-switch-btn" class="auth-switch-link" type="button">Зареєструватися</button>
@@ -53,7 +53,7 @@
       <div class="setup-card">
         <h2>Налаштування профілю</h2>
         <p class="setup-subtitle">Розкажіть трохи про себе перед початком</p>
-        
+
         <div class="setup-avatar-section">
           <div class="setup-avatar-preview">
             <img id="avatar-img" src="" alt="Avatar" style="display: none;">
@@ -82,7 +82,7 @@
   <!-- ЕКРАН 3: ГОЛОВНИЙ ІНТЕРФЕЙС -->
   <div id="screen-dashboard" class="screen">
     <div class="dashboard-layout">
-      
+
       <!-- БОКОВА ПАНЕЛЬ -->
       <aside class="sidebar">
         <div class="sidebar-logo">BOLEST<span>.AI</span></div>
@@ -96,7 +96,7 @@
 
       <!-- ОСНОВНИЙ КОНТЕНТ -->
       <main class="main-content">
-        
+
         <!-- ВКЛАДКА: ГОЛОВНА -->
         <div id="view-dashboard" class="content-view active dashboard-home">
           <aside class="dashboard-score-column">
@@ -140,7 +140,9 @@
                   <div class="level-bar"><div id="xp-fill" class="level-fill" style="width: 0%;"></div></div>
                   <span id="level-points" class="level-pts">0/100</span>
                 </div>
-<div class="week-days"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Нд</span></div>
+
+                <div class="card dashboard-streak-card">
+                  <div class="week-days"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Нд</span></div>
                 </div>
 
                 <div class="card dashboard-stats-card">
@@ -159,7 +161,7 @@
 
                 <div class="dashboard-actions-row">
                   <button id="btn-session" class="primary-btn">+ Навчальна сесія</button>
-</div>
+                </div>
               </div>
             </div>
           </section>
@@ -270,7 +272,7 @@
       <div class="card session-card-main">
         <p id="session-question-text" class="session-q-text">Завантаження питання...</p>
         <div id="session-options" class="session-options-list"></div>
-        
+
         <div class="session-controls">
           <button id="session-next-btn" class="primary-btn" style="display: none;">Наступне питання</button>
           <button id="session-finish-btn" class="primary-btn" style="display: none;">Завершити сесію</button>
@@ -286,6 +288,5 @@
     </div>
   </div>
 
-  
 </body>
 </html>
