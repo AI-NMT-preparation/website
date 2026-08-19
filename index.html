@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BOLEST.AI — Підготовка до НМТ</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Supabase SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="script.js" defer></script>
+  <!-- Supabase SDK must load before app logic -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="script.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
 </head>
@@ -98,64 +98,88 @@
       <main class="main-content">
         
         <!-- ВКЛАДКА: ГОЛОВНА -->
-        <div id="view-dashboard" class="content-view active">
-          <header class="content-header">
-            <div>
-              <h1>Головна панель</h1>
-              <p>Ваш прогрес підготовки до Національного мультипредметного тесту</p>
+        <div id="view-dashboard" class="content-view active dashboard-home">
+          <aside class="dashboard-score-column">
+            <div class="dashboard-score-card card">
+              <h3>Оцінка балів</h3>
+              <div class="dashboard-score-item">
+                <div>Математика</div>
+                <div class="dashboard-score-value"><span id="score-math">—</span></div>
+                <p id="range-math">Ще не складали</p>
+              </div>
+              <div class="dashboard-score-item">
+                <div>Українська мова</div>
+                <div class="dashboard-score-value"><span id="score-ukrainian">—</span></div>
+                <p id="range-ukrainian">Ще не складали</p>
+              </div>
+              <div class="dashboard-score-item">
+                <div>Історія України</div>
+                <div class="dashboard-score-value"><span id="score-history">—</span></div>
+                <p id="range-history">Ще не складали</p>
+              </div>
             </div>
-            <div class="level-badge-box">
-              <span id="level-title">Рівень 1</span>
-              <div class="level-bar"><div id="xp-fill" class="level-fill" style="width: 0%;"></div></div>
-              <span id="level-points" class="level-pts">0/100</span>
-            </div>
-          </header>
+          </aside>
 
-          <div class="dashboard-grid">
-            <div class="card subject-card">
-              <h3>Математика</h3>
-              <div class="score-display"><span id="score-math">—</span><span>/ 200</span></div>
-              <p id="range-math" class="range-note">Ще не складали</p>
-            </div>
-            <div class="card subject-card">
-              <h3>Українська мова</h3>
-              <div class="score-display"><span id="score-ukrainian">—</span><span>/ 200</span></div>
-              <p id="range-ukrainian" class="range-note">Ще не складали</p>
-            </div>
-            <div class="card subject-card">
-              <h3>Історія України</h3>
-              <div class="score-display"><span id="score-history">—</span><span>/ 200</span></div>
-              <p id="range-history" class="range-note">Ще не складали</p>
-            </div>
-          </div>
+          <section class="dashboard-main-area">
+            <header class="content-header dashboard-page-header">
+              <div>
+                <h1>Головна панель</h1>
+                <p>Ваш прогрес підготовки до Національного мультипредметного тесту</p>
+              </div>
+            </header>
 
-          <div class="actions-row">
-            <button id="btn-session" class="primary-btn">Почати навчальну сесію</button>
-            <button id="btn-review" class="secondary-btn">Лабораторія повторення</button>
-          </div>
+            <div class="dashboard-main-grid">
+              <div class="card dashboard-project-card">
+                <h2>Про проект Bolest.ai</h2>
+                <p>Інтерактивна платформа підготовки до НМТ з використанням штучного інтелекту.</p>
+              </div>
 
-          <div class="card mt-24">
-            <h3>Пріоритетні теми для опрацювання</h3>
-            <div id="priorities-list" class="sessions-grid"></div>
-          </div>
+              <div class="dashboard-right-column">
+                <div class="level-badge-box dashboard-level-card">
+                  <span id="level-title">Рівень 1</span>
+                  <div class="level-bar"><div id="xp-fill" class="level-fill" style="width: 0%;"></div></div>
+                  <span id="level-points" class="level-pts">0/100</span>
+                </div>
+
+                <div class="card dashboard-week-card">
+                  <div class="dashboard-card-kicker">0 днів після навчання</div>
+                  <div class="week-days"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Нд</span></div>
+                </div>
+
+                <div class="card dashboard-stats-card">
+                  <div class="dashboard-card-tabs"><span>Сьогодні</span><span class="active">За весь час</span></div>
+                  <div class="dashboard-stats-row">
+                    <div><strong id="dash-questions">0</strong><small>Питання</small></div>
+                    <div><strong id="dash-accuracy">0%</strong><small>Точність</small></div>
+                    <div><strong id="dash-difficulty">—</strong><small>Складність</small></div>
+                  </div>
+                </div>
+
+                <div class="card dashboard-priority-card">
+                  <h3>Пріоритетні теми для опрацювання</h3>
+                  <div id="priorities-list" class="sessions-grid"></div>
+                </div>
+
+                <div class="dashboard-actions-row">
+                  <button id="btn-session" class="primary-btn">+ Навчальна сесія</button>
+                  <button id="btn-review" class="secondary-btn">Лабораторія повторення</button>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
 
         <!-- ВКЛАДКА: АНАЛІТИКА -->
-        <div id="view-analytics" class="content-view">
+        <div id="view-analytics" class="content-view analytics-view">
           <header class="content-header">
-            <h1>Аналітика та динаміка</h1>
-            <p>Графіки зростання балів та детальна статистика по предметах</p>
+            <div>
+              <h1>Аналітика та динаміка</h1>
+              <p>Графіки зростання балів та детальна статистика по предметах</p>
+            </div>
           </header>
 
-          <div class="card">
-            <h3>Динаміка результатів тестів</h3>
-            <div class="chart-container">
-              <svg id="analytics-chart" width="640" height="280"></svg>
-              <div id="chart-empty-note" class="chart-empty">Недостатньо даних для побудови графіка</div>
-            </div>
-          </div>
-
-          <div class="analytics-grid mt-24">
+          <!-- Статистика зверху -->
+          <div class="analytics-grid analytics-stats-grid">
             <div class="card">
               <h4>Математика</h4>
               <p>Питань розв'язано: <strong id="an-math-questions">0</strong></p>
@@ -173,6 +197,15 @@
               <p>Питань розв'язано: <strong id="an-history-questions">0</strong></p>
               <p>Точність: <strong id="an-history-accuracy">0%</strong></p>
               <p>Останній бал: <strong id="an-table-history">—</strong></p>
+            </div>
+          </div>
+
+          <!-- Графік завжди нижче статистики -->
+          <div class="card analytics-chart-card">
+            <h3>Динаміка результатів тестів</h3>
+            <div class="chart-container">
+              <svg id="analytics-chart" width="640" height="280"></svg>
+              <div id="chart-empty-note" class="chart-empty">Недостатньо даних для побудови графіка</div>
             </div>
           </div>
         </div>

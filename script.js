@@ -198,6 +198,16 @@ function renderDashboard() {
   });
 
   renderPriorities();
+
+  const totalQuestions = (currentProfile.math_questions || 0) + (currentProfile.ukrainian_questions || 0) + (currentProfile.history_questions || 0);
+  const totalCorrect = (currentProfile.math_correct || 0) + (currentProfile.ukrainian_correct || 0) + (currentProfile.history_correct || 0);
+  const dashQuestions = document.getElementById("dash-questions");
+  const dashAccuracy = document.getElementById("dash-accuracy");
+  if (dashQuestions) dashQuestions.textContent = totalQuestions;
+  if (dashAccuracy) dashAccuracy.textContent = totalQuestions ? `${Math.round((totalCorrect / totalQuestions) * 100)}%` : "0%";
+  const dashDifficulty = document.getElementById("dash-difficulty");
+  if (dashDifficulty) dashDifficulty.textContent = "—";
+
   renderAnalytics();
 }
 
