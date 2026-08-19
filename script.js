@@ -912,7 +912,7 @@ function renderSessionQuestion() {
     `${((sessionIndex + 1) / sessionQuestions.length) * 100}%`;
 
   document.getElementById("session-topic-label").textContent =
-    `${SUBJECTS_META[item.subject].label} · ${item.topic}`;
+    `${SUBJECTS_META[item.subject].label} · ${item.topic.label}`;
 
   document.getElementById("session-question-text").textContent = item.question;
 

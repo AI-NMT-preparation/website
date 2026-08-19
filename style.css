@@ -877,6 +877,7 @@ html, body {
 }
 
 .level-block,
+.streak-block,
 .stats-block,
 .priorities-block {
   background: var(--bg-panel);
@@ -904,6 +905,27 @@ html, body {
   height: 100%;
   background: var(--accent);
   border-radius: 20px;
+}
+
+.streak-title {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.streak-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.day-cell {
+  background: var(--bg-panel-alt);
+  border-radius: 8px;
+  padding: 8px 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 .stats-tabs-static {
@@ -1114,209 +1136,116 @@ html, body {
   }
 }
 
-
-/* ================================================================
-   FINAL VISUAL TUNING — larger dashboard scale
-   ================================================================ */
-#screen-dashboard .app-layout {
-  /* Компактный центрированный макет — как в исходном дизайне.
-     Не растягиваем dashboard на весь экран. */
-  width: min(980px, calc(100vw - 32px));
-  max-width: 980px;
-  grid-template-columns: 175px minmax(0, 1fr) 220px;
-  gap: 14px;
-  padding: 20px 0;
+/* ==================== ФІНАЛЬНЕ ВИРІВНЮВАННЯ DASHBOARD ==================== */
+.app-layout {
+  grid-template-columns: 180px minmax(430px, 1.45fr) 190px minmax(330px, 1.05fr) 220px;
+  grid-template-rows: auto auto;
+  column-gap: 14px;
+  row-gap: 14px;
+  width: min(100%, 1580px);
+  max-width: 1580px;
+  padding: 28px 24px;
+  align-items: start;
 }
 
-#screen-dashboard .content-center {
-  min-height: 500px;
-  padding: 24px;
+.sidebar-left {
+  grid-column: 1;
+  grid-row: 1 / 3;
 }
 
-#screen-dashboard .logo { font-size: 21px; }
-#screen-dashboard .nav-btn { font-size: 12px; padding: 10px 12px; }
-#screen-dashboard .subject-name,
-#screen-dashboard .subject-range { font-size: 11px; }
-#screen-dashboard .subject-score { font-size: 17px; }
+.content-center {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  min-height: 430px;
+  padding: 28px;
+}
 
-#screen-dashboard .sidebar-right {
+/* Праву панель розкладаємо по окремих блоках, щоб вони не злипалися
+   в одну вузьку колонку. Сам HTML при цьому не змінюється. */
+.sidebar-right { display: contents; }
+
+.level-block {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.stats-block {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.priorities-block {
+  grid-column: 4;
+  grid-row: 1 / 3;
+  min-width: 0;
+  height: 100%;
+}
+
+.action-buttons {
+  grid-column: 5;
+  grid-row: 1 / 3;
+  align-self: start;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
-#screen-dashboard .level-block,
-#screen-dashboard .stats-block,
-#screen-dashboard .priorities-block {
-  padding: 14px;
+.streak-block { display: none !important; }
+
+.level-block,
+.stats-block,
+.priorities-block {
+  padding: 18px;
 }
 
-#screen-dashboard .priorities-list {
-  max-height: 330px;
+.priorities-list {
+  max-height: 390px;
 }
 
-/* Session setup wizard */
-#modal-box.modal-box-wide {
-  width: min(620px, calc(100vw - 32px));
-  max-width: 620px;
-  max-height: 82vh;
-  overflow: hidden;
-}
-
-.session-setup-title {
-  margin: 0 0 6px;
-  font-size: 20px;
-}
-
-.session-setup-subtitle {
-  margin: 0 0 18px;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.topic-picker {
-  max-height: 420px;
-  overflow-y: auto;
-  padding-right: 8px;
-}
-
-.topic-picker-subject {
-  margin-bottom: 18px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.topic-picker-subject:last-child {
-  border-bottom: none;
-}
-
-.topic-picker-subject h4 {
-  font-size: 14px;
-  margin: 0 0 10px;
-}
-
-.topic-checkbox-row {
-  min-height: 30px;
-  padding: 5px 0;
+.action-btn {
+  min-height: 48px;
   font-size: 13px;
 }
 
-.topic-checkbox-row.subject-all {
-  font-weight: 700;
-  color: var(--text-main);
-  padding-bottom: 8px;
+.action-btn.wide { min-height: 44px; }
+
+.project-info h2 { font-size: 24px; }
+.project-text-placeholder { font-size: 15px; max-width: 680px; }
+
+/* Аналітика: графік залишається після таблиці та статистики, а не збоку. */
+#view-analytics .analytics-chart-block {
+  margin-top: 24px;
 }
 
-.topic-checkbox-row input {
-  width: 16px;
-  height: 16px;
+#analytics-chart {
+  height: 300px;
 }
 
-.topic-picker-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.topic-picker-actions .secondary-btn,
-.topic-picker-actions .modal-submit-btn {
-  flex: 1;
-}
-
-.question-count-list {
-  max-height: 430px;
-  overflow-y: auto;
-  padding-right: 6px;
-}
-
-.question-count-group {
-  margin-bottom: 18px;
-}
-
-.question-count-group h4 {
-  margin: 0 0 10px;
-  font-size: 14px;
-  color: var(--accent);
-}
-
-.question-count-row {
-  background: var(--bg-panel-alt);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 11px 14px;
-  margin-bottom: 8px;
-}
-
-.question-count-row .slider-row-label {
-  margin-bottom: 8px;
-}
-
-.question-count-row input[type="range"] {
-  width: 100%;
-  accent-color: var(--accent);
+@media (max-width: 1250px) {
+  .app-layout {
+    grid-template-columns: 170px minmax(360px, 1fr) 180px minmax(300px, 1fr);
+  }
+  .action-buttons {
+    grid-column: 3 / 5;
+    grid-row: 3;
+  }
+  .priorities-block { grid-column: 4; grid-row: 1 / 3; }
 }
 
 @media (max-width: 900px) {
-  #screen-dashboard .app-layout {
-    width: calc(100vw - 28px);
-    grid-template-columns: 190px minmax(0, 1fr);
+  .app-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
   }
-
-  #screen-dashboard .sidebar-right {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .sidebar-left,
+  .content-center,
+  .level-block,
+  .stats-block,
+  .priorities-block,
+  .action-buttons {
+    grid-column: 1;
+    grid-row: auto;
   }
-
-  #screen-dashboard .priorities-block {
-    grid-column: 1 / -1;
-  }
-}
-
-/* ===== DASHBOARD FINAL FIX ===== */
-#screen-dashboard.screen.active {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 26px 16px 40px;
-  overflow-x: hidden;
-}
-
-#screen-dashboard .app-layout {
-  display: grid !important;
-  width: 980px !important;
-  max-width: 980px !important;
-  min-width: 0 !important;
-  margin: 0 auto !important;
-  padding: 0 !important;
-  grid-template-columns: 175px minmax(0, 1fr) 220px !important;
-  gap: 14px !important;
-  align-items: start !important;
-}
-
-#screen-dashboard .sidebar-left,
-#screen-dashboard .sidebar-right,
-#screen-dashboard .content-center {
-  min-width: 0;
-}
-
-#screen-dashboard .content-center {
-  width: auto !important;
-  min-height: 500px;
-}
-
-@media (max-width: 1050px) {
-  #screen-dashboard.screen.active {
-    padding-left: 12px;
-    padding-right: 12px;
-  }
-  #screen-dashboard .app-layout {
-    width: 100% !important;
-    max-width: 980px !important;
-    grid-template-columns: 175px minmax(0, 1fr) 220px !important;
-  }
-}
-
-@media (max-width: 760px) {
-  #screen-dashboard .app-layout {
-    grid-template-columns: 1fr !important;
-  }
+  .sidebar-left,
+  .content-center { min-height: auto; }
 }
