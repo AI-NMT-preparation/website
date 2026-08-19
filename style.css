@@ -1692,151 +1692,84 @@ html, body {
   .streak-block { display: none !important; }
 }
 
-
-/* ==================== QUESTION / TEST SETUP ==================== */
-.actions-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.actions-row > :last-child {
-  grid-column: 1 / -1;
-}
-
-.modal-box:has(.question-count-list),
-.modal-box:has(.topic-picker) {
-  max-width: 620px;
-}
-
-.modal-field-label {
-  display: block;
-  margin: 14px 0 7px;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.modal-content select,
-.modal-content input[type="number"] {
-  width: 100%;
-  background: var(--bg-panel-alt);
-  color: var(--text-main);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-}
-
-.subject-radio-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin: 12px 0 16px;
-}
-
-.subject-radio-option {
-  position: relative;
-  display: block;
-  padding: 10px 8px;
-  text-align: center;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  color: var(--text-muted);
-  background: var(--bg-panel-alt);
-}
-
-.subject-radio-option.selected {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.subject-radio-option input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.topic-picker {
-  max-height: 420px;
-  overflow-y: auto;
-  padding-right: 6px;
-}
-
-.topic-picker-subject h4 {
-  margin: 0 0 8px;
-  font-size: 13px;
-  color: var(--text-main);
-}
-
-.topic-checkbox-row {
-  display: flex;
-  gap: 9px;
-  align-items: center;
-  padding: 6px 0;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.topic-checkbox-row input {
-  width: 15px;
-  height: 15px;
-  accent-color: var(--accent);
-}
-
-.question-count-list {
-  max-height: 430px;
-  overflow-y: auto;
-  padding-right: 6px;
-}
-
-.question-count-group {
-  margin-bottom: 16px;
-}
-
-.question-count-group h4 {
-  margin: 0 0 8px;
-  color: var(--accent);
-  font-size: 13px;
-}
-
-.question-count-row {
-  padding: 9px 0;
-  border-top: 1px solid var(--border-color);
-}
-
-.question-count-row:first-child {
-  border-top: 0;
-}
-
-.slider-row-label {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 6px;
-  font-size: 12px;
-}
-
-.slider-value {
-  color: var(--accent);
-  font-weight: 700;
-}
-
-.session-question-range {
-  width: 100%;
-  accent-color: var(--accent);
-}
-
-.test-question-counter {
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-@media (max-width: 560px) {
-  .actions-row,
-  .subject-radio-row {
-    grid-template-columns: 1fr;
+/* =========================================================
+   DASHBOARD FIX — desktop right sidebar is ONE vertical column
+   ========================================================= */
+@media (min-width: 1201px) {
+  .app-layout {
+    display: grid !important;
+    grid-template-columns: 260px minmax(0, 1fr) 320px !important;
+    grid-template-rows: auto !important;
+    gap: 20px !important;
+    width: min(1500px, calc(100vw - 48px)) !important;
+    max-width: 1500px !important;
+    margin: 0 auto !important;
+    padding: 24px !important;
+    align-items: start !important;
   }
-  .actions-row > :last-child {
-    grid-column: auto;
+
+  .sidebar-left {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+
+  .content-center {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+    min-height: 500px !important;
+  }
+
+  /* ВАЖНО: вся правая часть снова обычная вертикальная колонка. */
+  .sidebar-right {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    align-self: start !important;
+  }
+
+  .level-block,
+  .streak-block,
+  .stats-block,
+  .priorities-block,
+  .action-buttons {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Возвращаем блок серии обучения — он был случайно скрыт. */
+  .streak-block {
+    display: block !important;
+  }
+
+  .priorities-block {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  .priorities-list {
+    max-height: 320px !important;
+    overflow-y: auto !important;
+  }
+
+  .action-buttons {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  .action-btn {
+    min-width: 0 !important;
+  }
+
+  .action-btn.wide {
+    grid-column: 1 / -1 !important;
   }
 }
