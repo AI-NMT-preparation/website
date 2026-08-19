@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js" defer></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
 </head>
@@ -129,8 +130,7 @@
           </div>
 
           <div class="actions-row">
-            <button id="btn-session" class="primary-btn">Навчальна сесія</button>
-            <button id="btn-test" class="secondary-btn">Пробний тест</button>
+            <button id="btn-session" class="primary-btn">Почати навчальну сесію</button>
             <button id="btn-review" class="secondary-btn">Лабораторія повторення</button>
           </div>
 
@@ -250,31 +250,13 @@
     </div>
   </div>
 
-  <!-- ЕКРАН 5: ПРОБНИЙ ТЕСТ -->
+  <!-- ЕКРАН 5: ТЕСТ -->
   <div id="screen-test" class="screen">
     <div class="session-box">
-      <div class="session-top-bar">
-        <button id="test-exit-btn" class="secondary-btn">Вийти</button>
-        <div class="session-progress-bar-container">
-          <div id="test-progress-label" class="session-progress-text">Питання 1 з 1</div>
-          <div class="level-bar"><div id="test-progress-fill" class="level-fill" style="width: 0%;"></div></div>
-        </div>
-        <span id="test-topic-label" class="session-topic-badge">Тема</span>
-      </div>
-
-      <div class="card session-card-main">
-        <p id="test-question-text" class="session-q-text">Завантаження питання...</p>
-        <div id="test-options" class="session-options-list"></div>
-
-        <div class="session-controls">
-          <button id="test-next-btn" class="primary-btn" style="display: none;">Наступне питання</button>
-          <button id="test-finish-btn" class="primary-btn" style="display: none;">Завершити тест</button>
-        </div>
-      </div>
+      <button id="test-exit-btn" class="secondary-btn">Вийти</button>
     </div>
   </div>
 
   
-  <script src="script.js"></script>
 </body>
 </html>
