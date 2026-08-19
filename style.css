@@ -6,7 +6,7 @@
   --border-color: #2c2d34;
   --text-main: #eceef1;
   --text-muted: #9a9ba3;
-  --accent: #8b5cf6;        /* фірмовий колір Bolest.ai (фіолетовий) */
+  --accent: #8b5cf6;       /* фірмовий колір Bolest.ai (фіолетовий) */
   --accent-hover: #a179f7;
   --accent-soft: rgba(139, 92, 246, 0.15);
   --positive: #4ade80;
@@ -62,9 +62,8 @@ html, body {
   font-size: 14px;
 }
 
-#email-input,
-#password-input,
-#username-input {
+#username-input,
+#password-input {
   width: 100%;
   background: var(--bg-panel-alt);
   border: 1px solid var(--border-color);
@@ -76,9 +75,8 @@ html, body {
   outline: none;
   transition: border-color 0.2s ease;
 }
-#email-input:focus,
-#password-input:focus,
-#username-input:focus { border-color: var(--accent); }
+#username-input:focus,
+#password-input:focus { border-color: var(--accent); }
 
 .auth-switch {
   text-align: center;
@@ -255,6 +253,7 @@ html, body {
   z-index: 0;
 }
 
+/* анімація наведення: заливка зліва направо */
 .nav-btn::before {
   content: "";
   position: absolute;
@@ -587,7 +586,7 @@ html, body {
   color: var(--text-muted);
 }
 
-/* ==================== МАЙСТЕР / СЕСІЇ / СЛАЙДЕРИ ==================== */
+/* ==================== МОДАЛКА-МАЙСТЕР (вибір тем / кількості питань) ==================== */
 .modal-box-wide { max-width: 560px; }
 
 .topic-picker {
@@ -596,43 +595,42 @@ html, body {
   padding-right: 6px;
 }
 
-.subject-group {
+.topic-picker-subject {
   margin-bottom: 16px;
 }
-.subject-group-title {
-  font-size: 14px;
-  font-weight: 700;
-  margin: 0 0 10px;
-  color: var(--accent);
-}
-
-.topic-checkbox-label {
+.topic-picker-subject h4 {
+  font-size: 13px;
+  margin: 0 0 8px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+
+.topic-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   padding: 6px 0;
   font-size: 13px;
   cursor: pointer;
 }
-.topic-checkbox-label input { accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
+.topic-checkbox-row input { accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
 
 .slider-row {
-  background: var(--bg-panel-alt);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
-  margin-bottom: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-color);
 }
+.slider-row:first-child { border-top: none; }
 
-.slider-header {
+.slider-row-label {
   font-size: 13px;
   margin-bottom: 8px;
   display: flex;
   justify-content: space-between;
 }
-.slider-val { color: var(--accent); font-weight: 700; }
+.slider-row-label .slider-value { color: var(--accent); font-weight: 700; }
 
-.range-slider {
+.slider-row input[type="range"] {
   width: 100%;
   accent-color: var(--accent);
 }
@@ -700,8 +698,7 @@ html, body {
 }
 .hint-btn:hover { border-color: var(--accent); }
 
-.hint-output,
-.ai-messages-area {
+.hint-output {
   font-size: 13px;
   color: var(--text-muted);
   line-height: 1.6;
@@ -709,17 +706,6 @@ html, body {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 14px;
-  overflow-y: auto;
-  max-height: 300px;
-}
-
-.ai-msg {
-  color: var(--accent);
-  margin: 6px 0;
-}
-.system-msg {
-  color: var(--text-muted);
-  margin: 0;
 }
 
 .session-question-panel {
@@ -783,8 +769,7 @@ html, body {
   margin-bottom: 26px;
 }
 
-/* Унифицированные кнопки вариантов ответа под JS */
-.option-btn {
+.session-option {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -794,17 +779,15 @@ html, body {
   padding: 14px 18px;
   cursor: pointer;
   font-size: 14px;
-  color: var(--text-main);
-  text-align: left;
-  width: 100%;
   transition: border-color 0.2s ease, background 0.2s ease;
 }
-.option-btn:hover { border-color: var(--accent); }
-.option-btn.correct { border-color: var(--positive); background: rgba(74, 222, 128, 0.12); }
-.option-btn.wrong { border-color: #f87171; background: rgba(248, 113, 113, 0.12); }
-.option-btn.locked { pointer-events: none; opacity: 0.7; }
+.session-option:hover { border-color: var(--accent); }
+.session-option.correct { border-color: var(--positive); background: rgba(74, 222, 128, 0.12); }
+.session-option.wrong { border-color: #f87171; background: rgba(248, 113, 113, 0.12); }
+.session-option.disabled { pointer-events: none; opacity: 0.7; }
+.session-option.selected-neutral { border-color: var(--accent); }
 
-.option-label {
+.session-option-letter {
   width: 26px;
   height: 26px;
   border-radius: 50%;
@@ -821,7 +804,7 @@ html, body {
 .session-bottom-actions { max-width: 720px; }
 .session-action-btn { width: auto; padding: 12px 28px; margin-top: 0; }
 
-/* ==================== ПРОБНИЙ ТЕСТ ==================== */
+/* ==================== ПРОБНИЙ ТЕСТ: топбар з навігацією по питаннях ==================== */
 .test-layout {
   padding: 32px 40px;
   max-width: 820px;
@@ -863,10 +846,27 @@ html, body {
 }
 .test-nav-dropdown.active { display: block; }
 
+.test-nav-item {
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.test-nav-item:hover { background: var(--bg-panel-alt); }
+.test-nav-item.answered { color: var(--text-main); }
+.test-nav-item.current { color: var(--accent); font-weight: 700; }
+
 .test-bottom-bar {
   display: flex;
   justify-content: space-between;
   max-width: 720px;
+}
+
+.project-text-placeholder {
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-size: 14px;
 }
 
 /* ---------- Права колонка ---------- */
@@ -877,7 +877,6 @@ html, body {
 }
 
 .level-block,
-.streak-block,
 .stats-block,
 .priorities-block {
   background: var(--bg-panel);
@@ -905,27 +904,6 @@ html, body {
   height: 100%;
   background: var(--accent);
   border-radius: 20px;
-}
-
-.streak-title {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin: 0 0 12px;
-}
-
-.streak-days {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-}
-
-.day-cell {
-  background: var(--bg-panel-alt);
-  border-radius: 8px;
-  padding: 8px 0;
-  text-align: center;
-  font-size: 11px;
-  color: var(--text-muted);
 }
 
 .stats-tabs-static {
@@ -966,6 +944,7 @@ html, body {
   border-top: 1px solid var(--border-color);
 }
 .session-item:first-child { border-top: none; }
+.session-topic-name { font-size: 13px; font-weight: 600; }
 
 .session-label {
   font-size: 12px;
@@ -982,6 +961,7 @@ html, body {
   color: #14151a;
 }
 
+/* кольори тем — статичні, як у оригіналі */
 .topic-pink    { background: #f472b6; }
 .topic-yellow  { background: #facc15; }
 .topic-green   { background: #4ade80; }
@@ -1136,273 +1116,155 @@ html, body {
 
 
 /* ================================================================
-   BOLEST.AI — REFERENCE LAYOUT OVERRIDES
-   This block matches the 3-column dashboard from the reference:
-   left navigation + scores | centered project/analytics | right stats.
+   FINAL VISUAL TUNING — larger dashboard scale
    ================================================================ */
-
-.screen.active {
-  align-items: center;
-  justify-content: center;
-}
-
-#screen-dashboard.screen.active {
-  display: flex;
-  width: 100%;
-  min-height: 100vh;
-}
-
 #screen-dashboard .app-layout {
-  width: min(1100px, calc(100vw - 40px));
-  max-width: 1100px;
-  grid-template-columns: 200px minmax(0, 1fr) 245px;
-  gap: 15px;
-  padding: 20px 0;
-  margin: 0 auto;
-  align-items: start;
-}
-
-#screen-dashboard .sidebar-left {
-  gap: 14px;
-}
-
-#screen-dashboard .logo {
-  font-size: 20px;
-  padding: 2px 4px 0;
-}
-
-#screen-dashboard .main-nav {
-  padding: 7px;
-}
-
-#screen-dashboard .nav-btn {
-  padding: 10px 12px;
-  font-size: 12px;
-}
-
-#screen-dashboard .score-block {
-  padding: 15px;
-}
-
-#screen-dashboard .score-header {
-  font-size: 12px;
-  margin-bottom: 10px;
-}
-
-#screen-dashboard .subject-row {
-  padding: 10px 0;
-}
-
-#screen-dashboard .subject-name,
-#screen-dashboard .subject-range {
-  font-size: 11px;
-}
-
-#screen-dashboard .subject-score {
-  font-size: 16px;
+  width: min(1240px, calc(100vw - 40px));
+  max-width: 1240px;
+  grid-template-columns: 220px minmax(0, 1fr) 275px;
+  gap: 18px;
+  padding: 22px 0;
 }
 
 #screen-dashboard .content-center {
-  min-width: 0;
-  min-height: 380px;
-  padding: 20px;
+  min-height: 560px;
+  padding: 30px;
 }
 
-#screen-dashboard .project-info h2,
-#screen-dashboard #view-analytics h2,
-#screen-dashboard #view-leaderboard h2 {
-  font-size: 17px;
-}
+#screen-dashboard .logo { font-size: 23px; }
+#screen-dashboard .nav-btn { font-size: 13px; padding: 11px 13px; }
+#screen-dashboard .subject-name,
+#screen-dashboard .subject-range { font-size: 12px; }
+#screen-dashboard .subject-score { font-size: 18px; }
 
-#screen-dashboard .project-text-placeholder {
-  margin-top: 10px;
-}
-
-#screen-dashboard .placeholder-note {
-  font-size: 11px;
-  line-height: 1.5;
-}
-
-/* Right column: compact blocks like the reference. */
 #screen-dashboard .sidebar-right {
-  gap: 10px;
+  gap: 12px;
 }
 
 #screen-dashboard .level-block,
-#screen-dashboard .streak-block,
 #screen-dashboard .stats-block,
 #screen-dashboard .priorities-block {
-  padding: 13px;
-  border-radius: 12px;
-}
-
-#screen-dashboard .level-header {
-  font-size: 11px;
-  margin-bottom: 8px;
-}
-
-#screen-dashboard .xp-bar {
-  height: 6px;
-}
-
-#screen-dashboard .streak-title {
-  font-size: 10px;
-  margin-bottom: 9px;
-}
-
-#screen-dashboard .streak-days {
-  gap: 4px;
-}
-
-#screen-dashboard .day-cell {
-  padding: 6px 0;
-  font-size: 9px;
-}
-
-#screen-dashboard .stats-tabs-static {
-  font-size: 10px;
-  padding-bottom: 7px;
-  margin-bottom: 9px;
-}
-
-#screen-dashboard .stat-item strong {
-  font-size: 15px;
-}
-
-#screen-dashboard .stat-item span {
-  font-size: 9px;
-}
-
-#screen-dashboard .priorities-block h3 {
-  font-size: 11px;
-  margin-bottom: 8px;
+  padding: 16px;
 }
 
 #screen-dashboard .priorities-list {
-  max-height: 255px;
+  max-height: 350px;
 }
 
-#screen-dashboard .session-item {
-  padding: 7px 0;
+/* Session setup wizard */
+#modal-box.modal-box-wide {
+  width: min(620px, calc(100vw - 32px));
+  max-width: 620px;
+  max-height: 82vh;
+  overflow: hidden;
 }
 
-#screen-dashboard .session-label,
-#screen-dashboard .session-progress {
-  font-size: 9px;
+.session-setup-title {
+  margin: 0 0 6px;
+  font-size: 20px;
 }
 
-#screen-dashboard .session-topic {
-  font-size: 10px;
-  padding: 2px 7px;
+.session-setup-subtitle {
+  margin: 0 0 18px;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
-#screen-dashboard .action-buttons {
-  gap: 7px;
+.topic-picker {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 8px;
 }
 
-#screen-dashboard .action-btn {
-  padding: 9px 7px;
-  font-size: 10px;
+.topic-picker-subject {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
 }
 
-/* Analytics: statistics first, graph strictly at the bottom. */
-#screen-dashboard #view-analytics {
-  display: none;
+.topic-picker-subject:last-child {
+  border-bottom: none;
 }
 
-#screen-dashboard #view-analytics.active {
-  display: block;
+.topic-picker-subject h4 {
+  font-size: 14px;
+  margin: 0 0 10px;
 }
 
-#screen-dashboard .analytics-columns {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.topic-checkbox-row {
+  min-height: 30px;
+  padding: 5px 0;
+  font-size: 13px;
+}
+
+.topic-checkbox-row.subject-all {
+  font-weight: 700;
+  color: var(--text-main);
+  padding-bottom: 8px;
+}
+
+.topic-checkbox-row input {
+  width: 16px;
+  height: 16px;
+}
+
+.topic-picker-actions {
+  display: flex;
   gap: 10px;
-  margin: 14px 0 16px;
+  margin-top: 16px;
 }
 
-#screen-dashboard .analytics-col {
-  padding: 11px;
+.topic-picker-actions .secondary-btn,
+.topic-picker-actions .modal-submit-btn {
+  flex: 1;
 }
 
-#screen-dashboard .analytics-col-title {
-  font-size: 11px;
-  margin-bottom: 9px;
+.question-count-list {
+  max-height: 430px;
+  overflow-y: auto;
+  padding-right: 6px;
 }
 
-#screen-dashboard .analytics-stat {
-  padding: 6px 0;
-}
-
-#screen-dashboard .analytics-stat strong {
-  font-size: 16px;
-}
-
-#screen-dashboard .analytics-stat span {
-  font-size: 9px;
-}
-
-#screen-dashboard .analytics-table {
+.question-count-group {
   margin-bottom: 18px;
 }
 
-#screen-dashboard .analytics-table th,
-#screen-dashboard .analytics-table td {
-  padding: 8px 10px;
-  font-size: 10px;
+.question-count-group h4 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: var(--accent);
 }
 
-#screen-dashboard .analytics-table td {
-  font-size: 12px;
+.question-count-row {
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 11px 14px;
+  margin-bottom: 8px;
 }
 
-#screen-dashboard .analytics-chart-block {
+.question-count-row .slider-row-label {
+  margin-bottom: 8px;
+}
+
+.question-count-row input[type="range"] {
   width: 100%;
-  margin-top: 4px;
+  accent-color: var(--accent);
 }
 
-#screen-dashboard .analytics-chart-block h3 {
-  font-size: 12px;
-  margin-bottom: 9px;
-}
-
-#screen-dashboard #analytics-chart {
-  display: block;
-  width: 100%;
-  height: 190px;
-}
-
-/* Keep dashboard readable on smaller screens. */
-@media (max-width: 1050px) {
+@media (max-width: 900px) {
   #screen-dashboard .app-layout {
     width: calc(100vw - 28px);
-    grid-template-columns: 185px minmax(0, 1fr) 220px;
-    gap: 12px;
-  }
-}
-
-@media (max-width: 820px) {
-  #screen-dashboard.screen.active {
-    align-items: flex-start;
+    grid-template-columns: 190px minmax(0, 1fr);
   }
 
-  #screen-dashboard .app-layout {
-    width: calc(100vw - 24px);
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 12px 0 20px;
-  }
-
-  #screen-dashboard .sidebar-left,
   #screen-dashboard .sidebar-right {
-    width: 100%;
-  }
-
-  #screen-dashboard .main-nav {
+    grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  #screen-dashboard .content-center {
-    min-height: 360px;
+  #screen-dashboard .priorities-block {
+    grid-column: 1 / -1;
   }
 }
