@@ -1249,3 +1249,106 @@ html, body {
   .sidebar-left,
   .content-center { min-height: auto; }
 }
+
+/* ==================== DASHBOARD: ОРИГІНАЛЬНЕ РОЗТАШУВАННЯ ====================
+   Три чіткі колонки: меню | основний блок | права панель.
+   Не змінюємо HTML/JS — лише повертаємо потрібну геометрію. */
+@media (min-width: 1251px) {
+  .app-layout {
+    display: grid;
+    grid-template-columns: 195px minmax(0, 630px) 244px;
+    grid-template-rows: auto;
+    column-gap: 20px;
+    row-gap: 20px;
+    width: 1030px;
+    max-width: calc(100vw - 40px);
+    margin: 0 auto;
+    padding: 42px 0;
+    align-items: start;
+  }
+
+  .sidebar-left {
+    grid-column: 1;
+    grid-row: 1;
+    gap: 18px;
+  }
+
+  .content-center {
+    grid-column: 2;
+    grid-row: 1;
+    width: 630px;
+    min-height: 378px;
+    padding: 24px 20px;
+  }
+
+  .project-info h2 {
+    font-size: 20px;
+    margin-bottom: 14px;
+  }
+
+  .project-text-placeholder {
+    font-size: 13px;
+    max-width: 560px;
+  }
+
+  /* Права частина — одна вертикальна колонка, як на референсі. */
+  .sidebar-right {
+    grid-column: 3;
+    grid-row: 1;
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  .level-block,
+  .stats-block,
+  .priorities-block {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: 244px;
+    min-width: 0;
+    padding: 14px;
+  }
+
+  .level-block {
+    min-height: 62px;
+  }
+
+  .stats-block {
+    min-height: 72px;
+  }
+
+  .priorities-block {
+    height: 288px;
+  }
+
+  .priorities-list {
+    max-height: 220px;
+  }
+
+  .action-buttons {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: 244px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .action-btn {
+    min-height: 48px;
+    padding: 9px 7px;
+    font-size: 12px;
+  }
+
+  .action-btn.wide {
+    min-height: 42px;
+  }
+
+  /* Старий блок "дні поспіль" не повинен з'являтися навіть якщо
+     він буде присутній у старій версії розмітки. */
+  .streak-block {
+    display: none !important;
+  }
+}
