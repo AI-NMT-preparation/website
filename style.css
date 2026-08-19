@@ -2060,3 +2060,130 @@ html, body {
   #screen-dashboard.active { padding: 10px; }
   .dashboard-actions-row { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   DASHBOARD V2 — FOUR INDEPENDENT COLUMNS
+   Sidebar | Scores | Project | Right widgets
+   Nothing is nested into the same visual column.
+   ============================================================ */
+
+@media (min-width: 1000px) {
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-layout {
+    width: min(1180px, 100%);
+    grid-template-columns: 198px 150px minmax(360px, 1fr) 244px;
+    gap: 16px;
+  }
+
+  /* Let the dashboard sections become direct grid items of the page grid. */
+  #screen-dashboard:has(#view-dashboard.active) .main-content,
+  #screen-dashboard:has(#view-dashboard.active) #view-dashboard.active,
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-main-area,
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-main-grid {
+    display: contents !important;
+  }
+
+  /* 1 — left navigation */
+  #screen-dashboard:has(#view-dashboard.active) .sidebar {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+  }
+
+  /* 2 — score card */
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-score-column {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+  }
+
+  /* 3 — center header + project */
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-page-header {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+    margin: 0 0 12px !important;
+  }
+
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-project-card {
+    grid-column: 3;
+    grid-row: 2;
+    min-height: 380px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* 4 — right column, each block remains its own card */
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-right-column {
+    grid-column: 4;
+    grid-row: 1 / span 2;
+    align-self: start;
+    width: 100%;
+    min-width: 0;
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-right-column > * {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-actions-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-actions-row button {
+    min-width: 0;
+    width: 100%;
+  }
+
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-score-card {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* Never let the dashboard cards overlap horizontally. */
+.dashboard-home,
+.dashboard-main-grid,
+.dashboard-main-area,
+.dashboard-score-column,
+.dashboard-right-column,
+.dashboard-project-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 999px) and (min-width: 701px) {
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-layout {
+    width: min(920px, 100%);
+    grid-template-columns: 170px 140px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  #screen-dashboard:has(#view-dashboard.active) .main-content,
+  #screen-dashboard:has(#view-dashboard.active) #view-dashboard.active,
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-main-area,
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-main-grid {
+    display: contents !important;
+  }
+
+  #screen-dashboard:has(#view-dashboard.active) .sidebar { grid-column: 1; grid-row: 1 / span 2; }
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-score-column { grid-column: 2; grid-row: 1 / span 2; }
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-page-header { grid-column: 3; grid-row: 1; }
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-project-card { grid-column: 3; grid-row: 2; }
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-right-column {
+    grid-column: 3;
+    grid-row: 3;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-right-column .dashboard-priority-card { grid-column: 1 / -1; }
+  #screen-dashboard:has(#view-dashboard.active) .dashboard-actions-row { grid-column: 1 / -1; }
+}
