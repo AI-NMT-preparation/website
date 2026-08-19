@@ -2114,3 +2114,36 @@ html, body {
   .main-nav { display: grid; grid-template-columns: repeat(4, 1fr); }
   .analytics-columns { grid-template-columns: 1fr; }
 }
+
+/* ===== DESKTOP LAYOUT PATCH =====
+   Keep the three sections side-by-side on normal desktop screens.
+   Do not let the old 1100px rule collapse the dashboard into one column.
+*/
+@media (min-width: 701px) {
+  #screen-dashboard.active { overflow-x: auto; }
+  .app-layout {
+    width: 1180px;
+    max-width: none;
+    margin: 0 auto;
+    grid-template-columns: 170px minmax(0, 1fr) 250px !important;
+    gap: 14px;
+    align-items: start;
+  }
+  .sidebar-left { grid-column: 1; grid-row: 1; }
+  .content-center { grid-column: 2; grid-row: 1; min-width: 0; }
+  .sidebar-right { grid-column: 3; grid-row: 1; min-width: 0; }
+}
+
+@media (max-width: 700px) {
+  .app-layout {
+    width: calc(100vw - 20px);
+    max-width: none;
+    grid-template-columns: 1fr !important;
+  }
+  .sidebar-left,
+  .content-center,
+  .sidebar-right {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
