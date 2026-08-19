@@ -447,8 +447,6 @@ document.getElementById("session-finish-btn").addEventListener("click", async ()
 
 document.getElementById("session-exit-btn").addEventListener("click", () => showScreen("screen-dashboard"));
 document.getElementById("test-exit-btn").addEventListener("click", () => showScreen("screen-dashboard"));
-document.getElementById("btn-review").addEventListener("click", () => openModal(`<h3>Лабораторія повторення</h3><p>Розділ у розробці.</p>`));
-
 /* ---------------------------------------------------------------------
    НАВІГАЦІЯ
    --------------------------------------------------------------------- */
