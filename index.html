@@ -7,9 +7,10 @@
   <link rel="stylesheet" href="style.css">
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script defer src="script.js"></script>
+  <script src="script.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
 </head>
 <body>
 
@@ -245,8 +246,9 @@
         <div id="session-hints" class="session-hints"></div>
         
         <div class="session-controls">
-          <button id="session-next-btn" class="primary-btn" style="display: none;">Наступне питання</button>
-          <button id="session-finish-btn" class="primary-btn" style="display: none;">Завершити сесію</button>
+          <button id="session-prev-btn" class="secondary-btn" type="button">Попереднє питання</button>
+          <button id="session-next-btn" class="primary-btn" type="button">Наступне питання</button>
+          <button id="session-finish-btn" class="primary-btn" type="button">Завершити сесію</button>
         </div>
       </div>
     </div>
@@ -268,8 +270,9 @@
         <div id="test-image"></div>
         <div id="test-options" class="session-options-list"></div>
         <div class="session-controls">
-          <button id="test-next-btn" class="primary-btn" style="display:none;">Наступне питання</button>
-          <button id="test-finish-btn" class="primary-btn" style="display:none;">Завершити тест</button>
+          <button id="test-prev-btn" class="secondary-btn" type="button">Попереднє питання</button>
+          <button id="test-next-btn" class="primary-btn" type="button">Наступне питання</button>
+          <button id="test-finish-btn" class="primary-btn" type="button">Завершити тест</button>
         </div>
       </div>
     </div>

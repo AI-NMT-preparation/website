@@ -328,9 +328,29 @@ let correctAnswersCount = 0;
 let activeSubject = "";
 let activeMode = "session";
 let activeQuestionResults = [];
+let questionAnswers = []; // збережений вибір користувача по кожному питанню (можна змінювати до завершення сесії)
 let sessionTopicCounts = {};
 
 const NMT_COUNTS = { math: 22, ukrainian: 30, history: 30 };
+
+/* Рендер LaTeX-формул (KaTeX auto-render) у заданому DOM-контейнері.
+   Підтримує $...$ та $$...$$, а також \( \) і \[ \]. */
+function renderMathIn(container) {
+  if (!container || typeof window.renderMathInElement !== "function") return;
+  try {
+    window.renderMathInElement(container, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false },
+        { left: "\\(", right: "\\)", display: false },
+        { left: "\\[", right: "\\]", display: true }
+      ],
+      throwOnError: false
+    });
+  } catch (e) {
+    console.warn("KaTeX render error:", e);
+  }
+}
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -549,6 +569,7 @@ function openSessionSetup() {
     currentQuestionIndex = 0;
     correctAnswersCount = 0;
     activeQuestionResults = [];
+    questionAnswers = new Array(questions.length).fill(null);
     closeModal();
     showScreen("screen-session");
     renderQuestion("session");
@@ -589,6 +610,7 @@ function openTrialTestSetup() {
     currentQuestionIndex = 0;
     correctAnswersCount = 0;
     activeQuestionResults = [];
+    questionAnswers = new Array(questions.length).fill(null);
     setTimeout(() => {
       closeModal();
       showScreen("screen-test");
@@ -633,7 +655,6 @@ function renderQuestion(mode) {
 
   const options = document.getElementById(`${prefix}-options`);
   options.innerHTML = "";
-  options.classList.remove("answered");
 
   if (mode === "session") {
     const hints = document.getElementById("session-hints");
@@ -645,38 +666,38 @@ function renderQuestion(mode) {
         const text = used === 0 ? q.hint1 : q.hint2;
         if (!text) { document.getElementById("hint-btn").disabled = true; return; }
         document.getElementById("hint-text").textContent = text;
+        renderMathIn(document.getElementById("hint-text"));
         used++;
         if (used >= 2 || (used === 1 && !q.hint2)) document.getElementById("hint-btn").disabled = true;
       });
     }
   }
 
-  if (q.question_type === "matching") renderMatchingQuestion(q, options, mode);
-  else if (q.question_type === "short_answer") renderShortAnswerQuestion(q, options, mode);
-  else if (q.question_type === "table") renderTableQuestion(q, options, mode);
-  else renderSingleChoiceQuestion(q, options, mode);
+  const savedAnswer = questionAnswers[currentQuestionIndex];
 
+  if (q.question_type === "matching") renderMatchingQuestion(q, options, mode, savedAnswer);
+  else if (q.question_type === "short_answer") renderShortAnswerQuestion(q, options, mode, savedAnswer);
+  else if (q.question_type === "table") renderTableQuestion(q, options, mode, savedAnswer);
+  else renderSingleChoiceQuestion(q, options, mode, savedAnswer);
+
+  const prevBtn = document.getElementById(`${prefix}-prev-btn`);
   const nextBtn = document.getElementById(`${prefix}-next-btn`);
   const finishBtn = document.getElementById(`${prefix}-finish-btn`);
-  nextBtn.style.display = "none";
-  finishBtn.style.display = "none";
+  if (prevBtn) prevBtn.disabled = currentQuestionIndex === 0;
+  if (nextBtn) nextBtn.disabled = currentQuestionIndex >= activeQuestions.length - 1;
+  if (finishBtn) finishBtn.style.display = "block";
+
+  renderMathIn(document.getElementById(`${prefix}-question-text`).closest(".session-card-main"));
 }
 
-function markAnswer(mode, isCorrect) {
-  const prefix = mode === "test" ? "test" : "session";
-  const options = document.getElementById(`${prefix}-options`);
-  if (options.classList.contains("answered")) return false;
-  options.classList.add("answered");
-  activeQuestionResults[currentQuestionIndex] = !!isCorrect;
-  if (isCorrect) correctAnswersCount++;
-  const nextBtn = document.getElementById(`${prefix}-next-btn`);
-  const finishBtn = document.getElementById(`${prefix}-finish-btn`);
-  if (currentQuestionIndex < activeQuestions.length - 1) nextBtn.style.display = "block";
-  else finishBtn.style.display = "block";
-  return true;
+/* Зберігає (чи оновлює) відповідь користувача на поточне питання.
+   Можна викликати повторно — вибір завжди можна змінити до завершення сесії. */
+function recordAnswer(mode, data) {
+  questionAnswers[currentQuestionIndex] = { ...data, correct: !!data.correct };
+  activeQuestionResults[currentQuestionIndex] = !!data.correct;
 }
 
-function renderSingleChoiceQuestion(q, container, mode) {
+function renderSingleChoiceQuestion(q, container, mode, savedAnswer) {
   const letters = ["A", "B", "C", "D"];
   q.options.forEach((text, index) => {
     if (text == null || String(text).trim() === "") return;
@@ -684,7 +705,8 @@ function renderSingleChoiceQuestion(q, container, mode) {
     el.className = "session-option";
     el.innerHTML = `<div class="session-option-letter">${letters[index]}</div><span>${escapeHtml(text)}</span>`;
     el.addEventListener("click", () => {
-      if (container.classList.contains("answered")) return;
+      // Дозволяємо переобирати відповідь будь-яку кількість разів до завершення сесії.
+      [...container.children].forEach(c => c.classList.remove("correct", "wrong"));
       const correct = isSingleChoiceCorrect(q, index, text);
       el.classList.add(correct ? "correct" : "wrong");
       if (!correct) {
@@ -692,26 +714,43 @@ function renderSingleChoiceQuestion(q, container, mode) {
         const ci = c.index != null ? Number(c.index) : ["a","b","c","d"].indexOf(normalizeLetter(c.option));
         if (ci >= 0 && container.children[ci]) container.children[ci].classList.add("correct");
       }
-      markAnswer(mode, correct);
+      recordAnswer(mode, { type: "single", selectedIndex: index, correct });
     });
     container.appendChild(el);
   });
+
+  if (savedAnswer && savedAnswer.type === "single") {
+    const selEl = container.children[savedAnswer.selectedIndex];
+    if (selEl) selEl.classList.add(savedAnswer.correct ? "correct" : "wrong");
+    if (!savedAnswer.correct) {
+      const c = getQuestionCorrect(q);
+      const ci = c.index != null ? Number(c.index) : ["a","b","c","d"].indexOf(normalizeLetter(c.option));
+      if (ci >= 0 && container.children[ci]) container.children[ci].classList.add("correct");
+    }
+  }
 }
 
-function renderShortAnswerQuestion(q, container, mode) {
+function renderShortAnswerQuestion(q, container, mode, savedAnswer) {
   container.innerHTML = `<div class="short-answer-wrap"><input id="short-answer-input" class="auth-input" type="text" placeholder="Введіть відповідь"><button id="short-answer-btn" class="primary-btn" type="button">Перевірити</button><div id="short-answer-result"></div></div>`;
+  const input = document.getElementById("short-answer-input");
+  const resultEl = document.getElementById("short-answer-result");
+  if (savedAnswer && savedAnswer.type === "short") {
+    input.value = savedAnswer.value || "";
+    resultEl.textContent = savedAnswer.correct ? "Правильно" : `Неправильно. Правильна відповідь: ${savedAnswer.expected}`;
+  }
   document.getElementById("short-answer-btn").addEventListener("click", () => {
-    const value = document.getElementById("short-answer-input").value.trim();
+    const value = input.value.trim();
     if (!value) return;
     const c = getQuestionCorrect(q);
     const expected = String(c.value ?? c.option ?? "").trim();
     const correct = value.toLowerCase() === expected.toLowerCase();
-    document.getElementById("short-answer-result").textContent = correct ? "Правильно" : `Неправильно. Правильна відповідь: ${expected}`;
-    markAnswer(mode, correct);
+    resultEl.textContent = correct ? "Правильно" : `Неправильно. Правильна відповідь: ${expected}`;
+    renderMathIn(resultEl);
+    recordAnswer(mode, { type: "short", value, expected, correct });
   });
 }
 
-function renderMatchingQuestion(q, container, mode) {
+function renderMatchingQuestion(q, container, mode, savedAnswer) {
   const left = Array.isArray(q.matching_left) ? q.matching_left : [];
   const right = Array.isArray(q.matching_right) ? q.matching_right : [];
   const correct = getQuestionCorrect(q);
@@ -724,21 +763,33 @@ function renderMatchingQuestion(q, container, mode) {
     const label = typeof item === "object" ? (item.label ?? item.text ?? id) : item;
     return `<div class="matching-row"><span>${escapeHtml(label)}</span><select class="matching-select" data-id="${escapeHtml(id)}"><option value="">—</option>${right.map((r,j)=>{ const rid=typeof r==='object'?(r.id??String.fromCharCode(65+j)):String.fromCharCode(65+j); const rl=typeof r==='object'?(r.label??r.text??rid):r; return `<option value="${escapeHtml(rid)}">${escapeHtml(rl)}</option>`; }).join("")}</select></div>`;
   }).join("") + `<button id="matching-btn" class="primary-btn" type="button">Перевірити</button><div id="matching-result"></div>`;
+
+  const resultEl = document.getElementById("matching-result");
+  if (savedAnswer && savedAnswer.type === "matching") {
+    container.querySelectorAll(".matching-select").forEach(sel => {
+      const v = savedAnswer.selections ? savedAnswer.selections[sel.dataset.id] : null;
+      if (v != null) sel.value = v;
+    });
+    resultEl.textContent = `Правильно: ${savedAnswer.correctCount} з ${savedAnswer.total}`;
+  }
+
   document.getElementById("matching-btn").addEventListener("click", () => {
     const selects = [...container.querySelectorAll(".matching-select")];
     let correctCount = 0;
+    const selections = {};
     selects.forEach(sel => {
       const key = sel.dataset.id;
+      selections[key] = sel.value;
       const expected = correct[key] ?? correct[String(key)];
       if (String(sel.value) === String(expected ?? "__never__")) correctCount++;
     });
     const ok = correctCount === selects.length;
-    document.getElementById("matching-result").textContent = `Правильно: ${correctCount} з ${selects.length}`;
-    markAnswer(mode, ok);
+    resultEl.textContent = `Правильно: ${correctCount} з ${selects.length}`;
+    recordAnswer(mode, { type: "matching", selections, correctCount, total: selects.length, correct: ok });
   });
 }
 
-function renderTableQuestion(q, container, mode) {
+function renderTableQuestion(q, container, mode, savedAnswer) {
   const data = q.table_data;
   if (!data) { container.innerHTML = "<p>Для табличного завдання не заповнено table_data.</p>"; return; }
   let headers = [], rows = [];
@@ -746,13 +797,19 @@ function renderTableQuestion(q, container, mode) {
   else { headers = data.headers || data.columns || []; rows = data.rows || []; }
   if (!headers.length && rows.length && Array.isArray(rows[0])) headers = rows[0].map((_,i)=>`Колонка ${i+1}`);
   container.innerHTML = `<div class="question-table-wrap"><table class="question-table"><thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${(Array.isArray(r)?r:Object.values(r)).map(v=>`<td>${escapeHtml(v)}</td>`).join("")}</tr>`).join("")}</tbody></table></div><div class="table-answer-wrap"><input id="table-answer-input" class="auth-input" type="text" placeholder="Введіть відповідь"><button id="table-answer-btn" class="primary-btn" type="button">Перевірити</button><div id="table-answer-result"></div></div>`;
+  const input = document.getElementById("table-answer-input");
+  const resultEl = document.getElementById("table-answer-result");
+  if (savedAnswer && savedAnswer.type === "table") {
+    input.value = savedAnswer.value || "";
+    resultEl.textContent = savedAnswer.correct ? "Правильно" : `Неправильно. Правильна відповідь: ${savedAnswer.expected}`;
+  }
   document.getElementById("table-answer-btn").addEventListener("click", () => {
-    const value = document.getElementById("table-answer-input").value.trim();
+    const value = input.value.trim();
     const c = getQuestionCorrect(q);
     const expected = String(c.value ?? c.option ?? "").trim();
     const ok = value.toLowerCase() === expected.toLowerCase();
-    document.getElementById("table-answer-result").textContent = ok ? "Правильно" : `Неправильно. Правильна відповідь: ${expected}`;
-    markAnswer(mode, ok);
+    resultEl.textContent = ok ? "Правильно" : `Неправильно. Правильна відповідь: ${expected}`;
+    recordAnswer(mode, { type: "table", value, expected, correct: ok });
   });
 }
 
@@ -762,7 +819,22 @@ function advanceQuestion(mode) {
   renderQuestion(mode);
 }
 
+function goToPreviousQuestion(mode) {
+  if (currentQuestionIndex <= 0) return;
+  currentQuestionIndex--;
+  renderQuestion(mode);
+}
+
+/* Підраховує фінальний результат на основі збережених (і, можливо,
+   змінених користувачем) відповідей questionAnswers. */
+function tallyResults() {
+  let correct = 0;
+  questionAnswers.forEach(a => { if (a && a.correct) correct++; });
+  return correct;
+}
+
 async function finishLearningSession() {
+  correctAnswersCount = tallyResults();
   const expGained = correctAnswersCount * 10;
   const newXp = (currentProfile.xp || 0) + expGained;
   const updates = {
@@ -794,6 +866,7 @@ function estimateTrialScore(subject, correct, total) {
 }
 
 async function finishTrialTest() {
+  correctAnswersCount = tallyResults();
   const score = estimateTrialScore(activeSubject, correctAnswersCount, activeQuestions.length);
   const history = Array.isArray(currentProfile[`${activeSubject}_history`]) ? [...currentProfile[`${activeSubject}_history`]] : [];
   history.push(score);
@@ -811,6 +884,8 @@ async function finishTrialTest() {
 
 document.getElementById("btn-session").addEventListener("click", openSessionSetup);
 document.getElementById("btn-test").addEventListener("click", openTrialTestSetup);
+document.getElementById("session-prev-btn")?.addEventListener("click", () => goToPreviousQuestion("session"));
+document.getElementById("test-prev-btn")?.addEventListener("click", () => goToPreviousQuestion("test"));
 document.getElementById("session-next-btn").addEventListener("click", () => advanceQuestion("session"));
 document.getElementById("test-next-btn").addEventListener("click", () => advanceQuestion("test"));
 document.getElementById("session-finish-btn").addEventListener("click", async () => {

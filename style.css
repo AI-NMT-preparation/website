@@ -2344,3 +2344,32 @@ html, body {
   #view-analytics .analytics-stats-grid,
   #view-analytics .analytics-grid { grid-template-columns:1fr !important; }
 }
+
+/* ==================== НАВІГАЦІЯ ПО ПИТАННЯХ: Попереднє / Наступне / Завершити ==================== */
+.session-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+.session-controls .primary-btn,
+.session-controls .secondary-btn {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 140px;
+  margin-top: 0;
+}
+.session-controls button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+@media (max-width: 560px) {
+  .session-controls {
+    flex-direction: column;
+  }
+  .session-controls .primary-btn,
+  .session-controls .secondary-btn {
+    width: 100%;
+  }
+}
