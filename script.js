@@ -1,24 +1,15 @@
 /* =====================================================================
-   BOLEST.AI — ЛОГІКА ФРОНТЕНДУ
-   =====================================================================
-   Увесь реальний прогрес (рівень, exp, бали з предметів, статистика
-   для аналітики) зберігається в базі даних Supabase (таблиця profiles),
-   а не в localStorage браузера. Supabase сам зберігає токен сесії, тому
-   при повторному відкритті сайту користувач лишається залогіненим.
+   BOLEST.AI — ЛОГІКА ФРОНТЕНДУ ТА SUPABASE
    ===================================================================== */
 
-// =====================================================================
-// 1. ИНИЦИАЛИЗАЦИЯ SUPABASE
-// =====================================================================
 const SUPABASE_URL = 'https://envhnssxtxcoxazfblfg.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_G1U5Iy7GZQaAIM8Uoah-4g_2-A2xDoX'; // Замените на ваш anon/publishable ключ
+const SUPABASE_KEY = 'sb_publishable_G1U5Iy7GZQaAIM8Uoah-4g_2-A2xDoX'; 
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Текущий авторизованный пользователь и его профиль
 let currentUser = null; 
 let currentProfile = null;
-let authMode = "login"; // "login" | "register"
+let authMode = "login"; 
 
 const SUBJECTS_META = {
   math: { label: "Математика", max: 32 },
@@ -26,61 +17,12 @@ const SUBJECTS_META = {
   history: { label: "Історія України", max: 54 }
 };
 
-// Кольори предметів — використовуються і в аналітиці, і в легенді графіка
 const SUBJECT_COLORS = {
   math: "#f472b6",
   ukrainian: "#facc15",
   history: "#4ade80"
 };
 
-/* ---------------------------------------------------------------------
-   ДЛЯ АНАЛІТИКИ потрібні нові колонки в таблиці profiles у Supabase.
-   Один раз виконай у Supabase -> SQL Editor:
-
-   ALTER TABLE profiles
-     ADD COLUMN IF NOT EXISTS math_questions integer DEFAULT 0,
-     ADD COLUMN IF NOT EXISTS math_correct integer DEFAULT 0,
-     ADD COLUMN IF NOT EXISTS ukrainian_questions integer DEFAULT 0,
-     ADD COLUMN IF NOT EXISTS ukrainian_correct integer DEFAULT 0,
-     ADD COLUMN IF NOT EXISTS history_questions integer DEFAULT 0,
-     ADD COLUMN IF NOT EXISTS history_correct integer DEFAULT 0,
-     ADD COLUMN IF NOT EXISTS math_history jsonb DEFAULT '[]'::jsonb,
-     ADD COLUMN IF NOT EXISTS ukrainian_history jsonb DEFAULT '[]'::jsonb,
-     ADD COLUMN IF NOT EXISTS history_history jsonb DEFAULT '[]'::jsonb;
-
-   Пояснення:
-   - {subject}_questions / {subject}_correct — рахуються з Навчальних
-     сесій (кожна сесія = 10 питань), звідси беруться "Питань розв'язано"
-     і "Точність" в Аналітиці.
-   - {subject}_history — масив балів (100–200) з усіх пройдених пробних
-     тестів по цьому предмету, по порядку — звідси будується графік.
-   --------------------------------------------------------------------- */
-
-/* ---------------------------------------------------------------------
-   ДЛЯ ЛІДЕРБОРДУ потрібно, щоб усі залогінені користувачі могли читати
-   (тільки читати!) чужі рядки з profiles — за замовчуванням Supabase
-   дозволяє людині бачити тільки свій власний рядок. Один раз виконай
-   у Supabase -> SQL Editor:
-
-   CREATE POLICY "Публічне читання для лідерборду"
-   ON profiles FOR SELECT
-   USING (true);
-
-   Це відкриває читання ВСІХ колонок таблиці всім користувачам (не
-   тільки залогіненим) — для нікнейму/балів/аватарки це нормально,
-   бо це й так публічна інформація на лідерборді. Але якщо пізніше
-   додаси в profiles щось приватне (наприклад email) — постав цю
-   інформацію в окрему таблицю або зроби публічний VIEW лише з
-   потрібними колонками, а не відкривай всю таблицю.
-   --------------------------------------------------------------------- */
-
-/* ---------------------------------------------------------------------
-   СПИСОК ТЕМ ПО ПРЕДМЕТАХ
-   ---------------------------------------------------------------------
-   "key" — це маркер, який має точно так само (символ в символ) стояти
-   в колонці topic таблиці questions у Supabase для цієї теми.
-   "label" — те, що бачить користувач на сайті.
-   --------------------------------------------------------------------- */
 const TOPICS = {
   math: [
     { key: "numbers_expressions", label: "Числа і вирази" },
@@ -113,98 +55,13 @@ const TOPICS = {
   ]
 };
 
-/* ---------------------------------------------------------------------
-   ТАБЛИЦІ ПЕРЕВОДУ ТЕСТОВИХ БАЛІВ У РЕЙТИНГОВУ ШКАЛУ (100–200) —
-   використовуються при завершенні Пробного тесту.
-   Математика: значення для балів 15, 16, 17, 30, 31 приблизні —
-   у вихідній таблиці МОН вони були закриті вікном чату на скріні.
-   --------------------------------------------------------------------- */
-const SCORE_TABLES = {
-  math: {
-    max: 32, threshold: 5,
-    table: {
-      5: 100, 6: 108, 7: 115, 8: 123, 9: 131, 10: 134, 11: 137, 12: 140,
-      13: 143, 14: 145, 15: 146, 16: 148, 17: 149, 18: 150, 19: 151, 20: 152,
-      21: 155, 22: 159, 23: 163, 24: 167, 25: 170, 26: 173, 27: 176, 28: 180,
-      29: 184, 30: 189, 31: 194, 32: 200
-    }
-  },
-  ukrainian: {
-    max: 45, threshold: 8,
-    table: {
-      8: 100, 9: 105, 10: 110, 11: 120, 12: 125, 13: 130, 14: 133, 15: 136,
-      16: 138, 17: 140, 18: 142, 19: 143, 20: 144, 21: 145, 22: 146, 23: 147,
-      24: 148, 25: 150, 26: 152, 27: 154, 28: 155, 29: 156, 30: 157, 31: 159,
-      32: 161, 33: 163, 34: 165, 35: 167, 36: 169, 37: 171, 38: 173, 39: 176,
-      40: 180, 41: 184, 42: 188, 43: 192, 44: 196, 45: 200
-    }
-  },
-  history: {
-    max: 54, threshold: 9,
-    table: {
-      9: 100, 10: 105, 11: 110, 12: 115, 13: 120, 14: 124, 15: 128, 16: 132,
-      17: 135, 18: 138, 19: 140, 20: 141, 21: 142, 22: 143, 23: 143.5, 24: 144,
-      25: 145, 26: 146, 27: 147, 28: 148, 29: 149, 30: 150, 31: 151, 32: 152,
-      33: 154, 34: 156, 35: 158, 36: 160, 37: 161, 38: 162, 39: 164, 40: 166,
-      41: 170, 42: 172, 43: 174, 44: 176, 45: 178, 46: 180, 47: 182, 48: 184,
-      49: 186, 50: 188, 51: 191, 52: 194, 53: 197, 54: 200
-    }
-  }
-};
-
-function convertRawToScaled(subject, rawScore) {
-  const cfg = SCORE_TABLES[subject];
-  if (rawScore < cfg.threshold) return null;
-  const capped = Math.min(rawScore, cfg.max);
-  return cfg.table[capped] ?? null;
-}
-
-/* ---------------------------------------------------------------------
-   ДЛЯ НАВЧАЛЬНОЇ СЕСІЇ / ПРОБНОГО ТЕСТУ потрібна таблиця з питаннями
-   і колонка в profiles для прогресу по темах. Один раз виконай у
-   Supabase -> SQL Editor:
-
-   CREATE TABLE IF NOT EXISTS questions (
-     id bigint generated by default as identity primary key,
-     subject text NOT NULL,             -- 'math' | 'ukrainian' | 'history'
-     topic text NOT NULL,               -- маркер теми, напр. 'planimetry'
-     question text NOT NULL,
-     option_a text NOT NULL,
-     option_b text NOT NULL,
-     option_c text NOT NULL,
-     option_d text NOT NULL,
-     correct_option text NOT NULL CHECK (correct_option IN ('a','b','c','d')),
-     hint1 text,
-     hint2 text
-   );
-
-   ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
-
-   CREATE POLICY "Читання питань для залогінених"
-   ON questions FOR SELECT
-   USING (auth.role() = 'authenticated');
-
-   ALTER TABLE profiles
-     ADD COLUMN IF NOT EXISTS topic_progress jsonb DEFAULT '{}'::jsonb;
-
-   Заповнюй таблицю questions вручну (або імпортом з Google Sheets /
-   CSV) — по 4 варіанти відповіді в option_a..option_d, вірний варіант
-   у correct_option ('a'/'b'/'c'/'d'), і, за бажанням, hint1/hint2 —
-   дві підказки, які видаються по черзі кнопкою "Дай підказку" під час
-   навчальної сесії. Значення в колонці topic мають ЗБІГАТИСЯ 1-в-1 з
-   key з об'єкта TOPICS вище (напр. "planimetry", "syntax" тощо).
-   --------------------------------------------------------------------- */
-
-/* ---------------------------------------------------------------------
-   ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ
-   --------------------------------------------------------------------- */
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach(el => el.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 }
 
 /* ---------------------------------------------------------------------
-   ЕКРАН 1: ВХОД / РЕГИСТРАЦИЯ (SUPABASE AUTH)
+   АВТОРИЗАЦІЯ
    --------------------------------------------------------------------- */
 const emailInput = document.getElementById("email-input");
 const passwordInput = document.getElementById("password-input");
@@ -217,7 +74,6 @@ const authNote = document.getElementById("auth-note");
 function setAuthMode(mode) {
   authMode = mode;
   authNote.textContent = "";
-
   if (mode === "login") {
     authModeSubtitle.textContent = "Увійдіть у свій акаунт";
     authSubmitBtn.textContent = "Увійти";
@@ -231,45 +87,30 @@ function setAuthMode(mode) {
   }
 }
 
-authSwitchBtn.addEventListener("click", () => {
-  setAuthMode(authMode === "login" ? "register" : "login");
-});
-
+authSwitchBtn.addEventListener("click", () => setAuthMode(authMode === "login" ? "register" : "login"));
 authSubmitBtn.addEventListener("click", handleAuthSubmit);
-passwordInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") handleAuthSubmit();
-});
+passwordInput.addEventListener("keydown", (e) => { if (e.key === "Enter") handleAuthSubmit(); });
 
 async function handleAuthSubmit() {
   const email = emailInput.value.trim();
   const password = passwordInput.value;
-
-  if (!email || !password) {
-    authNote.textContent = "Заповніть email та пароль.";
-    return;
-  }
+  if (!email || !password) { authNote.textContent = "Заповніть email та пароль."; return; }
 
   authSubmitBtn.disabled = true;
   authNote.textContent = "";
 
   try {
     let authData, authError;
-
     if (authMode === "login") {
       const res = await supabaseClient.auth.signInWithPassword({ email, password });
-      authData = res.data;
-      authError = res.error;
+      authData = res.data; authError = res.error;
     } else {
       const res = await supabaseClient.auth.signUp({ email, password });
-      authData = res.data;
-      authError = res.error;
+      authData = res.data; authError = res.error;
     }
-
     if (authError) throw authError;
-
     currentUser = authData.user;
     await checkAndLoadProfile();
-
   } catch (err) {
     authNote.textContent = err.message || "Помилка авторизації";
   } finally {
@@ -277,56 +118,36 @@ async function handleAuthSubmit() {
   }
 }
 
-// Проверка наличия профиля в DB
 async function checkAndLoadProfile() {
   if (!currentUser) return;
-
-  const { data: profile, error } = await supabaseClient
-    .from('profiles')
-    .select('*')
-    .eq('id', currentUser.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error("Ошибка загрузки профиля:", error);
-    return;
-  }
-
+  const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
   if (profile) {
     currentProfile = profile;
     renderDashboard();
     showScreen("screen-dashboard");
   } else {
-    // Если профиля нет — отправляем на настройку
     showScreen("screen-setup");
   }
 }
 
 /* ---------------------------------------------------------------------
-   ЕКРАН 2: НАЛАШТУВАННЯ ПРОФІЛЮ (СОХРАНЕНИЕ В SUPABASE)
+   НАЛАШТУВАННЯ ПРОФІЛЮ
    --------------------------------------------------------------------- */
 const avatarInput = document.getElementById("avatar-input");
 const avatarImg = document.getElementById("avatar-img");
 const avatarPlaceholder = document.getElementById("avatar-placeholder");
 const nicknameInput = document.getElementById("nickname-input");
 const descriptionInput = document.getElementById("description-input");
-const randomQuoteBtn = document.getElementById("random-quote-btn");
 const finishSetupBtn = document.getElementById("finish-setup-btn");
 
-const QUOTES = [
-  "Знання — це зброя.",
-  "Маленькі кроки щодня ведуть до великого успіху.",
-  "Дисципліна б'є талант."
-];
-
-randomQuoteBtn.addEventListener("click", () => {
+document.getElementById("random-quote-btn").addEventListener("click", () => {
+  const QUOTES = ["Знання — це зброя.", "Маленькі кроки щодня ведуть до великого успіху.", "Дисципліна б'є талант."];
   descriptionInput.value = QUOTES[Math.floor(Math.random() * QUOTES.length)];
 });
 
 avatarInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
-
   const reader = new FileReader();
   reader.onload = (event) => {
     avatarImg.src = event.target.result;
@@ -338,34 +159,16 @@ avatarInput.addEventListener("change", (e) => {
 
 finishSetupBtn.addEventListener("click", async () => {
   const nickname = nicknameInput.value.trim();
-
-  if (!nickname) {
-    nicknameInput.focus();
-    nicknameInput.style.borderColor = "#f87171";
-    return;
-  }
-
+  if (!nickname) { nicknameInput.focus(); nicknameInput.style.borderColor = "#f87171"; return; }
   finishSetupBtn.disabled = true;
 
   try {
     const { data, error } = await supabaseClient
-      .from('profiles')
-      .insert([
-        {
-          id: currentUser.id,
-          nickname: nickname,
-          description: descriptionInput.value.trim(),
-          xp: 0,
-          level: 1
-        }
-      ])
-      .select()
-      .single();
-
+      .from('profiles').insert([{ id: currentUser.id, nickname: nickname, description: descriptionInput.value.trim(), xp: 0, level: 1 }])
+      .select().single();
     if (error) throw error;
-
     currentProfile = data;
-    leaderboardCache = null; // дані змінились — оновимо лідерборд при наступному відкритті
+    leaderboardCache = null; 
     renderDashboard();
     showScreen("screen-dashboard");
   } catch (err) {
@@ -376,280 +179,122 @@ finishSetupBtn.addEventListener("click", async () => {
 });
 
 /* ---------------------------------------------------------------------
-   ЕКРАН 3: ГОЛОВНА СТОРІНКА — РЕНДЕР ПРОГРЕСУ
+   ГОЛОВНА СТОРІНКА ТА РЕНДЕР
    --------------------------------------------------------------------- */
-const levelTitleEl = document.getElementById("level-title");
-const levelPointsEl = document.getElementById("level-points");
-const xpFillEl = document.getElementById("xp-fill");
-
 function renderDashboard() {
   if (!currentProfile) return;
-
   const totalXp = currentProfile.xp || 0;
   const level = Math.floor(totalXp / 100) + 1;
   const expIntoLevel = totalXp % 100;
-  const expForNextLevel = 100;
 
-  levelTitleEl.textContent = `Рівень ${level}`;
-  levelPointsEl.textContent = `${expIntoLevel}/${expForNextLevel}`;
-  xpFillEl.style.width = `${Math.min(100, (expIntoLevel / expForNextLevel) * 100)}%`;
+  document.getElementById("level-title").textContent = `Рівень ${level}`;
+  document.getElementById("level-points").textContent = `${expIntoLevel}/100`;
+  document.getElementById("xp-fill").style.width = `${expIntoLevel}%`;
 
-  renderSubjectRow("math", currentProfile.math_score);
-  renderSubjectRow("ukrainian", currentProfile.ukrainian_score);
-  renderSubjectRow("history", currentProfile.history_score);
+  ["math", "ukrainian", "history"].forEach(subj => {
+    const score = currentProfile[`${subj}_score`];
+    document.getElementById(`score-${subj}`).textContent = score ?? "—";
+    document.getElementById(`range-${subj}`).textContent = score ? `Шкала: 100–200 · максимум: ${SUBJECTS_META[subj].max}` : "Ще не складали";
+  });
 
-  renderStatsBlock();
   renderPriorities();
   renderAnalytics();
 }
 
-function renderStatsBlock() {
-  const totalQuestions =
-    (currentProfile.math_questions || 0) +
-    (currentProfile.ukrainian_questions || 0) +
-    (currentProfile.history_questions || 0);
-  const totalCorrect =
-    (currentProfile.math_correct || 0) +
-    (currentProfile.ukrainian_correct || 0) +
-    (currentProfile.history_correct || 0);
-  const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
-
-  document.getElementById("stats-total-questions").textContent = totalQuestions;
-  document.getElementById("stats-total-accuracy").textContent = `${accuracy}%`;
-}
-
-// Пріоритети навчального плану: повний список усіх тем з кількістю
-// розв'язаних завдань (береться з profiles.topic_progress)
 function renderPriorities() {
   const listEl = document.getElementById("priorities-list");
   const progress = currentProfile.topic_progress || {};
-  const subjectDotClass = { math: "dot-math", ukrainian: "dot-ukrainian", history: "dot-history" };
-
   let html = "";
   Object.keys(TOPICS).forEach(subject => {
     TOPICS[subject].forEach(topic => {
-      const solved = progress[`${subject}:${topic.key}`] || 0;
-      html += `
-        <div class="session-item subject-${subject}" data-subject="${subject}">
-          <div class="session-label subject-label-${subject}">
-            <span class="legend-dot ${subjectDotClass[subject]}"></span>${SUBJECTS_META[subject].label}
-          </div>
-          <div class="session-topic-name">${topic.label}</div>
-          <div class="session-progress">Кількість розв'язаних завдань: ${solved}</div>
-        </div>
-      `;
+      html += `<div class="session-item" style="padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+          <div style="font-size: 12px; color: ${SUBJECT_COLORS[subject]};">${SUBJECTS_META[subject].label}</div>
+          <div style="font-weight: 600;">${topic.label}</div>
+          <div style="font-size: 13px; color: ${SUBJECT_COLORS[subject]};">Розв'язано: ${progress[`${subject}:${topic.key}`] || 0}</div>
+        </div>`;
     });
   });
   listEl.innerHTML = html;
 }
 
-function renderSubjectRow(subject, rating) {
-  const scoreEl = document.getElementById(`score-${subject}`);
-  const rangeEl = document.getElementById(`range-${subject}`);
-  const meta = SUBJECTS_META[subject];
-
-  if (rating === null || rating === undefined) {
-    scoreEl.textContent = "—";
-    rangeEl.textContent = "Ще не складали";
-  } else {
-    scoreEl.textContent = rating;
-    rangeEl.textContent = `Шкала: 100–200 · максимум тестових балів: ${meta.max}`;
-  }
-}
-
-/* ---------------------------------------------------------------------
-   АНАЛІТИКА: 3 колонки (питання/точність) + таблиця балів + графік
-   --------------------------------------------------------------------- */
 function renderAnalytics() {
   if (!currentProfile) return;
-
   ["math", "ukrainian", "history"].forEach(subject => {
-    const questions = currentProfile[`${subject}_questions`] || 0;
-    const correct = currentProfile[`${subject}_correct`] || 0;
-    const accuracy = questions > 0 ? Math.round((correct / questions) * 100) : 0;
-
-    document.getElementById(`an-${subject}-questions`).textContent = questions;
-    document.getElementById(`an-${subject}-accuracy`).textContent = `${accuracy}%`;
-
-    const rating = currentProfile[`${subject}_score`];
-    document.getElementById(`an-table-${subject}`).textContent =
-      (rating === null || rating === undefined) ? "—" : rating;
+    const q = currentProfile[`${subject}_questions`] || 0;
+    const c = currentProfile[`${subject}_correct`] || 0;
+    document.getElementById(`an-${subject}-questions`).textContent = q;
+    document.getElementById(`an-${subject}-accuracy`).textContent = q > 0 ? `${Math.round((c / q) * 100)}%` : "0%";
+    document.getElementById(`an-table-${subject}`).textContent = currentProfile[`${subject}_score`] ?? "—";
   });
-
   renderAnalyticsChart();
 }
 
 function renderAnalyticsChart() {
   const svg = document.getElementById("analytics-chart");
-  const emptyNote = document.getElementById("chart-empty-note");
-  const subjects = ["math", "ukrainian", "history"];
-
-  const histories = {};
-  let hasAnyData = false;
-  let maxLen = 0;
-
-  subjects.forEach(subject => {
-    const hist = currentProfile[`${subject}_history`] || [];
-    histories[subject] = hist;
-    if (hist.length > 0) hasAnyData = true;
-    maxLen = Math.max(maxLen, hist.length);
-  });
-
   svg.innerHTML = "";
-  emptyNote.style.display = hasAnyData ? "none" : "block";
-  if (!hasAnyData) return;
+  const histories = { math: currentProfile.math_history || [], ukrainian: currentProfile.ukrainian_history || [], history: currentProfile.history_history || [] };
+  const maxLen = Math.max(...Object.values(histories).map(h => h.length));
+  document.getElementById("chart-empty-note").style.display = maxLen > 0 ? "none" : "block";
+  if (maxLen === 0) return;
 
-  const width = 640;
-  const height = 280;
-  const padding = { top: 20, right: 20, bottom: 30, left: 44 };
-  const plotW = width - padding.left - padding.right;
-  const plotH = height - padding.top - padding.bottom;
+  const w = 640, h = 280, p = { top: 20, right: 20, bottom: 30, left: 44 };
+  const plotW = w - p.left - p.right, plotH = h - p.top - p.bottom;
+  const getX = i => p.left + (maxLen === 1 ? plotW / 2 : (i / (maxLen - 1)) * plotW);
+  const getY = score => p.top + plotH - ((score - 100) / 100) * plotH;
 
-  const yMin = 100;
-  const yMax = 200;
-
-  const xForIndex = (i) => padding.left + (maxLen === 1 ? plotW / 2 : (i / (maxLen - 1)) * plotW);
-  const yForScore = (score) => padding.top + plotH - ((score - yMin) / (yMax - yMin)) * plotH;
-
-  // горизонтальні напрямні лінії (100 / 150 / 200)
   [100, 150, 200].forEach(val => {
-    const y = yForScore(val);
-    svg.insertAdjacentHTML("beforeend", `
-      <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}"
-            stroke="#2c2d34" stroke-width="1" />
-      <text x="4" y="${y + 4}" font-size="11" fill="#9a9ba3">${val}</text>
-    `);
+    const y = getY(val);
+    svg.insertAdjacentHTML("beforeend", `<line x1="${p.left}" y1="${y}" x2="${w - p.right}" y2="${y}" stroke="#2c2d34"/><text x="4" y="${y + 4}" font-size="11" fill="#9a9ba3">${val}</text>`);
   });
 
-  subjects.forEach(subject => {
-    const hist = histories[subject];
+  Object.keys(histories).forEach(subj => {
+    const hist = histories[subj];
     if (hist.length === 0) return;
-
-    const points = hist.map((score, i) => `${xForIndex(i)},${yForScore(score)}`).join(" ");
-    svg.insertAdjacentHTML("beforeend", `
-      <polyline points="${points}" fill="none" stroke="${SUBJECT_COLORS[subject]}"
-                stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
-    `);
-
-    hist.forEach((score, i) => {
-      svg.insertAdjacentHTML("beforeend", `
-        <circle cx="${xForIndex(i)}" cy="${yForScore(score)}" r="3.5" fill="${SUBJECT_COLORS[subject]}" />
-      `);
-    });
+    const points = hist.map((s, i) => `${getX(i)},${getY(s)}`).join(" ");
+    svg.insertAdjacentHTML("beforeend", `<polyline points="${points}" fill="none" stroke="${SUBJECT_COLORS[subj]}" stroke-width="2.5" stroke-linejoin="round"/>`);
+    hist.forEach((s, i) => svg.insertAdjacentHTML("beforeend", `<circle cx="${getX(i)}" cy="${getY(s)}" r="3.5" fill="${SUBJECT_COLORS[subj]}" />`));
   });
 }
 
-/* ---------------------------------------------------------------------
-   ПРОФІЛЬ: фото по центру (або "немає фото"), рівень, к-сть питань, опис
-   --------------------------------------------------------------------- */
 function renderProfileView() {
-  if (!currentProfile) return;
-
   document.getElementById("profile-level").textContent = `Рівень ${currentProfile.level || 1}`;
-
-  const totalQuestions =
-    (currentProfile.math_questions || 0) +
-    (currentProfile.ukrainian_questions || 0) +
-    (currentProfile.history_questions || 0);
-  document.getElementById("profile-questions").textContent = `${totalQuestions} питань`;
-
-  const avatarImg = document.getElementById("profile-avatar-img");
-  const avatarPlaceholder = document.getElementById("profile-avatar-placeholder");
-  if (currentProfile.avatar) {
-    avatarImg.src = currentProfile.avatar;
-    avatarImg.style.display = "block";
-    avatarPlaceholder.style.display = "none";
-  } else {
-    avatarImg.style.display = "none";
-    avatarPlaceholder.style.display = "block";
-  }
-
+  document.getElementById("profile-questions").textContent = `${(currentProfile.math_questions || 0) + (currentProfile.ukrainian_questions || 0) + (currentProfile.history_questions || 0)} питань`;
   document.getElementById("profile-nickname").textContent = currentProfile.nickname || "—";
-
-  const descEl = document.getElementById("profile-description");
-  descEl.textContent = currentProfile.description ? currentProfile.description : "Опис відсутній";
+  document.getElementById("profile-description").textContent = currentProfile.description || "Опис відсутній";
+  if (currentProfile.avatar) {
+    document.getElementById("profile-avatar-img").src = currentProfile.avatar;
+    document.getElementById("profile-avatar-img").style.display = "block";
+    document.getElementById("profile-avatar-placeholder").style.display = "none";
+  }
 }
 
-/* ---------------------------------------------------------------------
-   ЛІДЕРБОРД: список лідерів з фільтром за критерієм
-   --------------------------------------------------------------------- */
-let leaderboardFilter = "questions";
-let leaderboardCache = null; // кешуємо сирі дані, фільтр далі рахуємо на клієнті
-
+let leaderboardFilter = "questions", leaderboardCache = null;
 async function loadLeaderboard() {
   const listEl = document.getElementById("leaderboard-list");
-  const emptyNote = document.getElementById("leaderboard-empty-note");
-
   if (!leaderboardCache) {
-    listEl.innerHTML = `<p class="leaderboard-empty" id="leaderboard-empty-note">Завантаження...</p>`;
-
-    const { data, error } = await supabaseClient
-      .from('profiles')
-      .select('id, nickname, avatar, math_questions, math_correct, ukrainian_questions, ukrainian_correct, history_questions, history_correct, math_score, ukrainian_score, history_score')
-      .limit(200);
-
-    if (error) {
-      listEl.innerHTML = `<p class="leaderboard-empty">Не вдалося завантажити лідерборд: ${error.message}</p>`;
-      return;
-    }
-
+    listEl.innerHTML = `<p class="leaderboard-empty">Завантаження...</p>`;
+    const { data, error } = await supabaseClient.from('profiles').select('*').limit(200);
+    if (error) { listEl.innerHTML = `<p class="leaderboard-empty">Помилка: ${error.message}</p>`; return; }
     leaderboardCache = data.map(row => {
-      const totalQuestions =
-        (row.math_questions || 0) + (row.ukrainian_questions || 0) + (row.history_questions || 0);
-      const totalCorrect =
-        (row.math_correct || 0) + (row.ukrainian_correct || 0) + (row.history_correct || 0);
-      const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
-
-      return { ...row, totalQuestions, accuracy };
+      const tq = (row.math_questions || 0) + (row.ukrainian_questions || 0) + (row.history_questions || 0);
+      const tc = (row.math_correct || 0) + (row.ukrainian_correct || 0) + (row.history_correct || 0);
+      return { ...row, totalQuestions: tq, accuracy: tq > 0 ? Math.round((tc / tq) * 100) : 0 };
     });
   }
-
-  renderLeaderboardList();
-}
-
-function renderLeaderboardList() {
-  const listEl = document.getElementById("leaderboard-list");
-  if (!leaderboardCache) return;
-
   let rows = [...leaderboardCache];
-  let valueKey; // ключ значення, яке показуємо праворуч
-  let valueSuffix = "";
+  let valKey = leaderboardFilter === "questions" ? "totalQuestions" : (leaderboardFilter === "accuracy" ? "accuracy" : `${leaderboardFilter}_score`);
+  let suffix = leaderboardFilter === "accuracy" ? "%" : "";
+  
+  rows = leaderboardFilter === "questions" || leaderboardFilter === "accuracy" ? rows : rows.filter(r => r[valKey] != null);
+  rows.sort((a, b) => b[valKey] - a[valKey]);
 
-  if (leaderboardFilter === "questions") {
-    valueKey = "totalQuestions";
-    rows.sort((a, b) => b.totalQuestions - a.totalQuestions);
-  } else if (leaderboardFilter === "accuracy") {
-    valueKey = "accuracy";
-    valueSuffix = "%";
-    rows = rows.filter(r => r.totalQuestions > 0);
-    rows.sort((a, b) => b.accuracy - a.accuracy);
-  } else {
-    // math / ukrainian / history — рейтинг по балах предмета
-    const scoreField = `${leaderboardFilter}_score`;
-    valueKey = scoreField;
-    rows = rows.filter(r => r[scoreField] !== null && r[scoreField] !== undefined);
-    rows.sort((a, b) => b[scoreField] - a[scoreField]);
-  }
-
-  rows = rows.slice(0, 20);
-
-  if (rows.length === 0) {
-    listEl.innerHTML = `<p class="leaderboard-empty">Поки що немає результатів у цій категорії.</p>`;
-    return;
-  }
-
-  listEl.innerHTML = rows.map((row, i) => `
+  if (rows.length === 0) { listEl.innerHTML = `<p class="leaderboard-empty">Немає результатів.</p>`; return; }
+  listEl.innerHTML = rows.slice(0, 20).map((r, i) => `
     <div class="leaderboard-row">
       <span class="leaderboard-rank">${i + 1}</span>
-      <span class="leaderboard-avatar">
-        ${row.avatar
-          ? `<img src="${row.avatar}" alt="">`
-          : (row.nickname ? row.nickname.charAt(0).toUpperCase() : "?")}
-      </span>
-      <span class="leaderboard-name">${row.nickname || "Без нікнейму"}</span>
-      <span class="leaderboard-value">${row[valueKey]}${valueSuffix}</span>
-    </div>
-  `).join("");
+      <span class="leaderboard-name">${r.nickname || "Анонім"}</span>
+      <span class="leaderboard-value">${r[valKey]}${suffix}</span>
+    </div>`).join("");
 }
 
 document.querySelectorAll(".filter-btn").forEach(btn => {
@@ -657,580 +302,534 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
     document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     leaderboardFilter = btn.dataset.filter;
-    renderLeaderboardList();
+    loadLeaderboard();
   });
 });
 
 /* ---------------------------------------------------------------------
-   МОДАЛЬНОЕ ОКНО
+   МОДАЛКИ
    --------------------------------------------------------------------- */
 const modalOverlay = document.getElementById("modal-overlay");
 const modalContent = document.getElementById("modal-content");
-const modalClose = document.getElementById("modal-close");
-
-function openModal(html) {
-  modalContent.innerHTML = html;
-  modalOverlay.classList.add("active");
-}
-function closeModal() {
-  modalOverlay.classList.remove("active");
-}
-modalClose.addEventListener("click", closeModal);
-modalOverlay.addEventListener("click", (e) => {
-  if (e.target === modalOverlay) closeModal();
-});
-
-// Навчальна сесія:
-// 1) вибір предметів/тем чекбоксами;
-// 2) для кожної обраної теми — 1..10 питань повзунком;
-// 3) завантаження питань з уже наявної таблиці questions;
-// 4) проходження через вже наявний #screen-session;
-// 5) після завершення — оновлення існуючої статистики профілю.
-
-let sessionPlan = [];
-let sessionQuestions = [];
-let sessionIndex = 0;
-let sessionCorrectCount = 0;
-let sessionAnswered = false;
-let sessionHintStep = 0;
-
-function subjectTopicsHtml(subject) {
-  const meta = SUBJECTS_META[subject];
-  const topics = TOPICS[subject];
-
-  return `
-    <div class="topic-picker-subject subject-${subject}" data-subject-group="${subject}">
-      <h4>${meta.label}</h4>
-
-      <label class="topic-checkbox-row subject-all">
-        <input type="checkbox" class="subject-all-checkbox" data-subject="${subject}">
-        <span>Весь предмет</span>
-      </label>
-
-      ${topics.map(topic => `
-        <label class="topic-checkbox-row">
-          <input
-            type="checkbox"
-            class="topic-checkbox"
-            data-subject="${subject}"
-            data-topic="${topic.key}"
-          >
-          <span>${topic.label}</span>
-        </label>
-      `).join("")}
-    </div>
-  `;
-}
-
-function openSessionTopicStep() {
-  openModal(`
-    <h3 class="session-setup-title">Які теми тренуємо?</h3>
-    <p class="session-setup-subtitle">
-      Оберіть предмет повністю або окремі теми.
-    </p>
-
-    <div class="topic-picker">
-      ${subjectTopicsHtml("math")}
-      ${subjectTopicsHtml("ukrainian")}
-      ${subjectTopicsHtml("history")}
-    </div>
-
-    <div class="topic-picker-actions">
-      <button class="secondary-btn" id="session-cancel-btn" type="button">Скасувати</button>
-      <button class="modal-submit-btn" id="session-topics-next" type="button">Далі</button>
-    </div>
-    <div class="modal-result" id="session-setup-result"></div>
-  `);
-
-  document.querySelectorAll(".subject-all-checkbox").forEach(allBox => {
-    allBox.addEventListener("change", () => {
-      const subject = allBox.dataset.subject;
-      document.querySelectorAll(`.topic-checkbox[data-subject="${subject}"]`)
-        .forEach(box => { box.checked = allBox.checked; });
-    });
-  });
-
-  document.querySelectorAll(".topic-checkbox").forEach(box => {
-    box.addEventListener("change", () => {
-      const subject = box.dataset.subject;
-      const boxes = [...document.querySelectorAll(`.topic-checkbox[data-subject="${subject}"]`)];
-      const allBox = document.querySelector(`.subject-all-checkbox[data-subject="${subject}"]`);
-      allBox.checked = boxes.length > 0 && boxes.every(item => item.checked);
-    });
-  });
-
-  document.getElementById("session-cancel-btn").addEventListener("click", closeModal);
-
-  document.getElementById("session-topics-next").addEventListener("click", () => {
-    const selected = [...document.querySelectorAll(".topic-checkbox:checked")];
-
-    if (selected.length === 0) {
-      document.getElementById("session-setup-result").textContent =
-        "Оберіть хоча б одну тему.";
-      return;
-    }
-
-    const selectedTopics = selected.map(box => {
-      const subject = box.dataset.subject;
-      const topic = TOPICS[subject].find(item => item.key === box.dataset.topic);
-      return { subject, ...topic, count: 1 };
-    });
-
-    openSessionQuestionCountStep(selectedTopics);
-  });
-}
-
-function openSessionQuestionCountStep(selectedTopics) {
-  const grouped = Object.keys(TOPICS)
-    .map(subject => ({
-      subject,
-      topics: selectedTopics.filter(item => item.subject === subject)
-    }))
-    .filter(group => group.topics.length > 0);
-
-  openModal(`
-    <h3 class="session-setup-title">Кількість питань</h3>
-    <p class="session-setup-subtitle">
-      Встановіть від 1 до 10 питань для кожної обраної теми.
-    </p>
-
-    <div class="question-count-list">
-      ${grouped.map(group => `
-        <div class="question-count-group subject-${group.subject}">
-          <h4>${SUBJECTS_META[group.subject].label}</h4>
-
-          ${group.topics.map(topic => `
-            <div class="question-count-row">
-              <div class="slider-row-label">
-                <span>${topic.label}</span>
-                <span class="slider-value" id="count-value-${topic.subject}-${topic.key}">1</span>
-              </div>
-              <input
-                type="range"
-                min="1"
-                max="10"
-                value="1"
-                data-subject="${topic.subject}"
-                data-topic="${topic.key}"
-                class="session-question-range"
-              >
-            </div>
-          `).join("")}
-        </div>
-      `).join("")}
-    </div>
-
-    <div class="topic-picker-actions">
-      <button class="secondary-btn" id="session-count-back" type="button">Назад</button>
-      <button class="modal-submit-btn" id="session-start-btn" type="button">Почати сесію</button>
-    </div>
-    <div class="modal-result" id="session-count-result"></div>
-  `);
-
-  document.querySelectorAll(".session-question-range").forEach(range => {
-    range.addEventListener("input", () => {
-      const valueEl = document.getElementById(
-        `count-value-${range.dataset.subject}-${range.dataset.topic}`
-      );
-      valueEl.textContent = range.value;
-    });
-  });
-
-  document.getElementById("session-count-back").addEventListener("click", () => {
-    openSessionTopicStep();
-  });
-
-  document.getElementById("session-start-btn").addEventListener("click", async () => {
-    const ranges = [...document.querySelectorAll(".session-question-range")];
-
-    sessionPlan = ranges.map(range => ({
-      subject: range.dataset.subject,
-      topic: TOPICS[range.dataset.subject].find(item => item.key === range.dataset.topic),
-      count: Number(range.value)
-    }));
-
-    const resultEl = document.getElementById("session-count-result");
-    const startBtn = document.getElementById("session-start-btn");
-
-    startBtn.disabled = true;
-    resultEl.textContent = "Завантаження питань...";
-
-    try {
-      const loaded = [];
-
-      for (const plan of sessionPlan) {
-        const { data, error } = await supabaseClient
-          .from("questions")
-          .select("id, subject, topic, question, option_a, option_b, option_c, option_d, correct_option, hint1, hint2")
-          .eq("subject", plan.subject)
-          .eq("topic", plan.topic.key)
-          .limit(plan.count);
-
-        if (error) throw error;
-
-        if (!data || data.length < plan.count) {
-          throw new Error(
-            `Для теми «${plan.topic.label}» недостатньо питань у базі. Потрібно: ${plan.count}, доступно: ${data ? data.length : 0}.`
-          );
-        }
-
-        // Перемішуємо вже завантажені питання, не додаючи нової логіки/бібліотек.
-        const shuffled = [...data].sort(() => Math.random() - 0.5);
-        loaded.push(...shuffled);
-      }
-
-      sessionQuestions = loaded.sort(() => Math.random() - 0.5);
-      window.__bolestSessionResults = [];
-      sessionIndex = 0;
-      sessionCorrectCount = 0;
-      sessionAnswered = false;
-      sessionHintStep = 0;
-
-      closeModal();
-      showScreen("screen-session");
-      renderSessionQuestion();
-    } catch (err) {
-      resultEl.textContent = "Помилка: " + (err.message || "Не вдалося завантажити питання.");
-      startBtn.disabled = false;
-    }
-  });
-}
-
-document.getElementById("btn-session").addEventListener("click", openSessionTopicStep);
-
-function renderSessionQuestion() {
-  if (!sessionQuestions.length) return;
-
-  const item = sessionQuestions[sessionIndex];
-  sessionAnswered = false;
-  sessionHintStep = 0;
-
-  document.getElementById("session-progress-label").textContent =
-    `Питання ${sessionIndex + 1}/${sessionQuestions.length}`;
-
-  document.getElementById("session-progress-fill").style.width =
-    `${((sessionIndex + 1) / sessionQuestions.length) * 100}%`;
-
-  const sessionTopicLabel = document.getElementById("session-topic-label");
-  sessionTopicLabel.textContent = `${SUBJECTS_META[item.subject].label} · ${item.topic.label}`;
-  sessionTopicLabel.dataset.subject = item.subject;
-
-  document.getElementById("session-question-text").textContent = item.question;
-
-  const options = [
-    ["a", item.option_a],
-    ["b", item.option_b],
-    ["c", item.option_c],
-    ["d", item.option_d]
-  ];
-
-  const optionsEl = document.getElementById("session-options");
-  optionsEl.innerHTML = options.map(([letter, text]) => `
-    <button class="session-option" type="button" data-option="${letter}">
-      <span class="session-option-letter">${letter.toUpperCase()}</span>
-      <span>${text}</span>
-    </button>
-  `).join("");
-
-  optionsEl.querySelectorAll(".session-option").forEach(button => {
-    button.addEventListener("click", () => answerSessionQuestion(button.dataset.option));
-  });
-
-  document.getElementById("session-next-btn").style.display =
-    sessionIndex < sessionQuestions.length - 1 ? "none" : "none";
-  document.getElementById("session-finish-btn").style.display = "none";
-
-  const hintOutput = document.getElementById("hint-output");
-  if (hintOutput) {
-    hintOutput.textContent = "Натисніть кнопку, щоб отримати підказку.";
-  }
-}
-
-function answerSessionQuestion(selectedOption) {
-  if (sessionAnswered) return;
-
-  const item = sessionQuestions[sessionIndex];
-  const optionButtons = document.querySelectorAll("#session-options .session-option");
-  sessionAnswered = true;
-
-  optionButtons.forEach(button => {
-    button.disabled = true;
-    if (button.dataset.option === item.correct_option) {
-      button.classList.add("correct");
-    }
-    if (button.dataset.option === selectedOption && selectedOption !== item.correct_option) {
-      button.classList.add("wrong");
-    }
-  });
-
-  if (selectedOption === item.correct_option) {
-    sessionCorrectCount += 1;
-  }
-
-  if (sessionIndex < sessionQuestions.length - 1) {
-    const nextBtn = document.getElementById("session-next-btn");
-    nextBtn.style.display = "inline-block";
-  } else {
-    const finishBtn = document.getElementById("session-finish-btn");
-    finishBtn.style.display = "inline-block";
-  }
-}
-
-document.getElementById("session-next-btn").addEventListener("click", () => {
-  sessionIndex += 1;
-  renderSessionQuestion();
-});
-
-document.getElementById("session-finish-btn").addEventListener("click", finishLearningSession);
-
-document.getElementById("session-exit-btn").addEventListener("click", () => {
-  sessionQuestions = [];
-  sessionPlan = [];
-  showScreen("screen-dashboard");
-});
-
-async function finishLearningSession() {
-  const total = sessionQuestions.length;
-  if (!total) return;
-
-  const subjectStats = {};
-  const topicProgress = { ...(currentProfile.topic_progress || {}) };
-
-  sessionQuestions.forEach((question, index) => {
-    const subject = question.subject;
-
-    if (!subjectStats[subject]) {
-      subjectStats[subject] = { questions: 0, correct: 0 };
-    }
-
-    subjectStats[subject].questions += 1;
-
-    // Правильні відповіді вже пораховані одним лічильником, тому тут
-    // розподіляємо їх за фактичними відповідями через збережений стан нижче.
-    // Для поточної сесії достатньо загального correct для XP; статистику
-    // по предмету розраховуємо через answer results.
-  });
-
-  // Щоб не втрачати розподіл правильних відповідей по предметах, збираємо
-  // результат із позначених у DOM кнопок не можна, бо попередні питання вже
-  // замінені. Тому використовуємо середній варіант: загальний результат
-  // записуємо в предмети пропорційно кількості питань.
-  // Для точності збережемо результат кожного питання в sessionResults.
-  const results = window.__bolestSessionResults || [];
-  const perSubject = {};
-
-  sessionQuestions.forEach((q, i) => {
-    const subject = q.subject;
-    if (!perSubject[subject]) perSubject[subject] = { questions: 0, correct: 0 };
-    perSubject[subject].questions += 1;
-    if (results[i] === true) perSubject[subject].correct += 1;
-
-    const key = `${subject}:${q.topic}`;
-    topicProgress[key] = (topicProgress[key] || 0) + 1;
-  });
-
-  const totalCorrect = Object.values(perSubject)
-    .reduce((sum, value) => sum + value.correct, 0);
-
-  const expGained = totalCorrect * 10;
-  const newXp = (currentProfile.xp || 0) + expGained;
-  const newLevel = Math.floor(newXp / 100) + 1;
-
-  const updates = {
-    xp: newXp,
-    level: newLevel,
-    topic_progress: topicProgress
-  };
-
-  Object.keys(perSubject).forEach(subject => {
-    updates[`${subject}_questions`] =
-      (currentProfile[`${subject}_questions`] || 0) + perSubject[subject].questions;
-    updates[`${subject}_correct`] =
-      (currentProfile[`${subject}_correct`] || 0) + perSubject[subject].correct;
-  });
-
-  try {
-    const { data, error } = await supabaseClient
-      .from("profiles")
-      .update(updates)
-      .eq("id", currentUser.id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    currentProfile = data;
-    leaderboardCache = null;
-
-    renderDashboard();
-    showScreen("screen-dashboard");
-
-    openModal(`
-      <h3>Сесію завершено</h3>
-      <p class="modal-hint">
-        Правильних відповідей: ${totalCorrect} з ${total}.
-      </p>
-      <p class="modal-result">Нараховано +${expGained} exp.</p>
-      <button class="modal-submit-btn" id="session-result-close" type="button">Закрити</button>
-    `);
-
-    document.getElementById("session-result-close").addEventListener("click", closeModal);
-  } catch (err) {
-    alert("Помилка збереження результату: " + (err.message || err));
-  }
-}
-
-// Зберігаємо результат кожної відповіді, щоб правильно оновлювати
-// статистику по предметах.
-window.__bolestSessionResults = [];
-
-const originalRenderSessionQuestion = renderSessionQuestion;
-renderSessionQuestion = function() {
-  const item = sessionQuestions[sessionIndex];
-
-  if (sessionIndex === 0) {
-    window.__bolestSessionResults = [];
-  }
-
-  originalRenderSessionQuestion();
-};
-
-const originalAnswerSessionQuestion = answerSessionQuestion;
-answerSessionQuestion = function(selectedOption) {
-  const item = sessionQuestions[sessionIndex];
-  const correct = selectedOption === item.correct_option;
-
-  originalAnswerSessionQuestion(selectedOption);
-  window.__bolestSessionResults[sessionIndex] = correct;
-};
-
-// Підказки — використовують вже наявні hint1/hint2 поля.
-document.getElementById("hint-btn").addEventListener("click", () => {
-  const item = sessionQuestions[sessionIndex];
-  const output = document.getElementById("hint-output");
-  if (!item || !output) return;
-
-  const hint = sessionHintStep === 0 ? item.hint1 : item.hint2;
-
-  if (hint) {
-    output.textContent = hint;
-    sessionHintStep += 1;
-  } else {
-    output.textContent = "Для цього питання підказка не додана.";
-  }
-});
-
-document.getElementById("explain-btn").addEventListener("click", () => {
-  const output = document.getElementById("hint-output");
-  if (!output) return;
-
-  output.textContent =
-    "Пояснення крок за кроком для цього питання ще не додано.";
-});
-
-// Пробный тест
-document.getElementById("btn-test").addEventListener("click", () => {
-  openModal(`
-    <h3>Пробний тест</h3>
-    <label class="modal-field-label" for="test-subject">Предмет</label>
-    <select id="test-subject">
-      <option value="math">Математика (макс. 32)</option>
-      <option value="ukrainian">Українська мова (макс. 45)</option>
-      <option value="history">Історія України (макс. 54)</option>
-    </select>
-
-    <label class="modal-field-label" for="test-raw">Кількість правильних відповідей</label>
-    <input type="number" id="test-raw" min="0" value="0">
-
-    <button class="modal-submit-btn" id="test-submit" type="button">Завершити тест</button>
-    <div class="modal-result" id="test-result"></div>
-  `);
-
-  const subjectSelect = document.getElementById("test-subject");
-  const rawInput = document.getElementById("test-raw");
-
-  const syncMax = () => { rawInput.max = SUBJECTS_META[subjectSelect.value].max; };
-  syncMax();
-  subjectSelect.addEventListener("change", syncMax);
-
-  document.getElementById("test-submit").addEventListener("click", async () => {
-    const subject = subjectSelect.value;
-    const resultEl = document.getElementById("test-result");
-    let raw = parseInt(rawInput.value, 10) || 0;
-
-    const scaledScore = convertRawToScaled(subject, raw);
-    const expGained = 20;
-    if (scaledScore === null) {
-      resultEl.textContent = `Недостатньо правильних відповідей для шкали 100–200. Пороговий бал: ${SCORE_TABLES[subject].threshold}.`;
-      return;
-    }
-
-    const newHistory = [...(currentProfile[`${subject}_history`] || []), scaledScore];
-
-    const updates = {
-      xp: (currentProfile.xp || 0) + expGained,
-      level: Math.floor(((currentProfile.xp || 0) + expGained) / 100) + 1,
-      [`${subject}_score`]: scaledScore,
-      [`${subject}_history`]: newHistory
-    };
-
-    try {
-      const { data, error } = await supabaseClient
-        .from('profiles')
-        .update(updates)
-        .eq('id', currentUser.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      currentProfile = data;
-    leaderboardCache = null; // дані змінились — оновимо лідерборд при наступному відкритті
-      renderDashboard();
-      resultEl.textContent = `Тест складено! Ваш бал: ${scaledScore} (+${expGained} exp)`;
-    } catch (err) {
-      resultEl.textContent = "Помилка: " + err.message;
-    }
-  });
-});
+function openModal(html) { modalContent.innerHTML = html; modalOverlay.classList.add("active"); }
+function closeModal() { modalOverlay.classList.remove("active"); }
+document.getElementById("modal-close").addEventListener("click", closeModal);
+modalOverlay.addEventListener("click", (e) => { if (e.target === modalOverlay) closeModal(); });
 
 /* ---------------------------------------------------------------------
-   НАВИГАЦИЯ И ВИТРИНА
+   НАВЧАЛЬНА СЕСІЯ / ПРОБНИЙ ТЕСТ
+   Питання беруться з public.questions, а якщо там їх немає —
+   напряму з таблиці теми у схемі math / ukrainian / history.
+   --------------------------------------------------------------------- */
+
+let activeQuestions = [];
+let currentQuestionIndex = 0;
+let correctAnswersCount = 0;
+let activeSubject = "";
+let activeMode = "session";
+let activeQuestionResults = [];
+let sessionTopicCounts = {};
+
+const NMT_COUNTS = { math: 22, ukrainian: 30, history: 30 };
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function parseJson(value, fallback) {
+  if (value == null) return fallback;
+  if (typeof value === "object") return value;
+  try { return JSON.parse(value); } catch { return fallback; }
+}
+
+function normalizeCorrect(value) {
+  if (value == null) return null;
+  if (typeof value === "object") return value;
+  const s = String(value).trim();
+  if (/^[a-d]$/i.test(s)) return { option: s.toLowerCase() };
+  if (/^[а-я]$/iu.test(s)) return { option: s.toUpperCase() };
+  return { value: s };
+}
+
+function normalizeQuestion(row, subject, topicKey) {
+  const type = row.question_type || "single_choice";
+  let options = parseJson(row.options, []);
+  if (!Array.isArray(options) || options.length === 0) {
+    options = [row.option_a, row.option_b, row.option_c, row.option_d].filter(v => v != null && String(v).trim() !== "");
+  }
+
+  let correct = parseJson(row.correct_answer, null);
+  if (!correct || (typeof correct === "object" && Object.keys(correct).length === 0)) {
+    correct = normalizeCorrect(row.right_answer);
+  }
+  if (!correct && row.correct_option != null) correct = normalizeCorrect(row.correct_option);
+  if (!correct && row.correct_index != null) correct = { index: Number(row.correct_index) };
+
+  return {
+    id: row.id,
+    subject,
+    topic: row.topic || topicKey,
+    question_type: type,
+    question_text: row.question_text || row.question || "",
+    image_path: row.image_path || null,
+    options,
+    correct_answer: correct || {},
+    matching_left: parseJson(row.matching_left, []),
+    matching_right: parseJson(row.matching_right, []),
+    table_data: parseJson(row.table_data, null),
+    hint1: row.hint1 || null,
+    hint2: row.hint2 || null,
+    explanation: row.explanation || null
+  };
+}
+
+async function fetchTopicQuestions(subject, topicKey) {
+  // 1. Новий універсальний формат: public.questions
+  const universal = await supabaseClient
+    .from("questions")
+    .select("*")
+    .eq("subject", subject)
+    .eq("topic", topicKey);
+
+  if (!universal.error && universal.data && universal.data.length) {
+    return universal.data.map(row => normalizeQuestion(row, subject, topicKey));
+  }
+
+  // 2. Формат, який уже є у користувача: math.equations_inequalities,
+  // ukrainian.syntax, history.kyivan_rus тощо.
+  const direct = await supabaseClient
+    .schema(subject)
+    .from(topicKey)
+    .select("*");
+
+  if (direct.error) {
+    console.warn(`Не вдалося прочитати ${subject}.${topicKey}:`, direct.error.message);
+    return [];
+  }
+  return (direct.data || []).map(row => normalizeQuestion(row, subject, topicKey));
+}
+
+function shuffle(array) {
+  const a = [...array];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+async function loadQuestionsForPlan(subject, plan) {
+  const result = [];
+  for (const item of plan) {
+    const rows = await fetchTopicQuestions(subject, item.topic);
+    if (!rows.length) continue;
+    result.push(...shuffle(rows).slice(0, Math.max(1, Math.min(10, Number(item.count) || 1))));
+  }
+  return shuffle(result);
+}
+
+async function loadNmtQuestions(subject) {
+  const topics = TOPICS[subject] || [];
+  const pools = [];
+  for (const topic of topics) {
+    const rows = await fetchTopicQuestions(subject, topic.key);
+    if (rows.length) pools.push({ topic: topic.key, rows: shuffle(rows) });
+  }
+  if (!pools.length) return [];
+
+  const target = NMT_COUNTS[subject];
+  const selected = [];
+  let cursor = 0;
+  let guard = 0;
+  while (selected.length < target && guard < target * 20) {
+    const pool = pools[cursor % pools.length];
+    if (pool.rows.length) selected.push(pool.rows.shift());
+    pools.splice(0, 0); // no-op: keeps array stable
+    cursor++;
+    if (pools.every(p => p.rows.length === 0)) break;
+    guard++;
+  }
+  return shuffle(selected).slice(0, target);
+}
+
+function topicLabel(subject, key) {
+  const found = (TOPICS[subject] || []).find(t => t.key === key);
+  return found ? found.label : key || "Загальне";
+}
+
+function openSessionSetup() {
+  const subjectOptions = Object.entries(SUBJECTS_META)
+    .map(([key, meta]) => `<option value="${key}">${meta.label}</option>`).join("");
+
+  openModal(`
+    <h3>Навчальна сесія</h3>
+    <label class="modal-field-label">Предмет</label>
+    <select id="modal-subject-select">${subjectOptions}</select>
+    <div class="session-plan-head">
+      <label><input type="checkbox" id="all-topics-check" checked> Усі теми</label>
+      <span>Кількість питань: 1–10 для кожної обраної теми</span>
+    </div>
+    <div id="session-topic-picker" class="session-topic-picker"></div>
+    <button class="modal-submit-btn" id="start-session-btn" type="button">Почати сесію</button>
+    <div id="modal-status" class="modal-result"></div>
+  `);
+
+  const select = document.getElementById("modal-subject-select");
+  const picker = document.getElementById("session-topic-picker");
+  const allCheck = document.getElementById("all-topics-check");
+
+  function renderTopicPicker() {
+    const topics = TOPICS[select.value] || [];
+    picker.innerHTML = topics.map((t, i) => `
+      <div class="session-topic-row">
+        <label class="session-topic-check">
+          <input type="checkbox" class="topic-check" data-topic="${t.key}" checked>
+          <span>${escapeHtml(t.label)}</span>
+        </label>
+        <input type="range" class="topic-count" data-topic="${t.key}" min="1" max="10" value="${i === 0 ? 2 : 1}">
+        <output class="topic-count-value" data-for="${t.key}">${i === 0 ? 2 : 1}</output>
+      </div>
+    `).join("");
+
+    picker.querySelectorAll(".topic-count").forEach(range => {
+      range.addEventListener("input", () => {
+        const out = picker.querySelector(`[data-for="${range.dataset.topic}"]`);
+        if (out) out.textContent = range.value;
+      });
+    });
+    picker.querySelectorAll(".topic-check").forEach(check => {
+      check.addEventListener("change", () => {
+        allCheck.checked = [...picker.querySelectorAll(".topic-check")].every(x => x.checked);
+      });
+    });
+  }
+
+  select.addEventListener("change", renderTopicPicker);
+  allCheck.addEventListener("change", () => {
+    picker.querySelectorAll(".topic-check").forEach(c => c.checked = allCheck.checked);
+  });
+  renderTopicPicker();
+
+  document.getElementById("start-session-btn").addEventListener("click", async () => {
+    const selected = [...picker.querySelectorAll(".topic-check:checked")];
+    if (!selected.length) {
+      document.getElementById("modal-status").textContent = "Оберіть хоча б одну тему.";
+      return;
+    }
+    const plan = selected.map(check => ({
+      topic: check.dataset.topic,
+      count: Number(picker.querySelector(`.topic-count[data-topic="${check.dataset.topic}"]`).value)
+    }));
+    const status = document.getElementById("modal-status");
+    status.textContent = "Завантажую питання з таблиць...";
+    const questions = await loadQuestionsForPlan(select.value, plan);
+    if (!questions.length) {
+      status.textContent = "У вибраних таблицях немає питань. Перевір назви схем/таблиць та дані.";
+      return;
+    }
+    activeSubject = select.value;
+    activeMode = "session";
+    activeQuestions = questions;
+    sessionTopicCounts = Object.fromEntries(plan.map(x => [x.topic, x.count]));
+    currentQuestionIndex = 0;
+    correctAnswersCount = 0;
+    activeQuestionResults = [];
+    closeModal();
+    showScreen("screen-session");
+    renderQuestion("session");
+  });
+}
+
+function openTrialTestSetup() {
+  openModal(`
+    <h3>Пробний тест НМТ</h3>
+    <p class="modal-description">Питання будуть випадково розподілені між усіма темами обраного предмета.</p>
+    <label class="modal-field-label">Предмет</label>
+    <select id="modal-test-subject">
+      <option value="math">Математика — ${NMT_COUNTS.math} питань</option>
+      <option value="ukrainian">Українська мова — ${NMT_COUNTS.ukrainian} питань</option>
+      <option value="history">Історія України — ${NMT_COUNTS.history} питань</option>
+    </select>
+    <button class="modal-submit-btn" id="start-test-btn" type="button">Почати пробний тест</button>
+    <div id="modal-status" class="modal-result"></div>
+  `);
+
+  document.getElementById("start-test-btn").addEventListener("click", async () => {
+    const subject = document.getElementById("modal-test-subject").value;
+    const status = document.getElementById("modal-status");
+    status.textContent = "Формую тест з усіх доступних таблиць...";
+    const questions = await loadNmtQuestions(subject);
+    if (!questions.length) {
+      status.textContent = "Не знайдено питань. Додай їх у public.questions або у таблиці тем.";
+      return;
+    }
+    if (questions.length < NMT_COUNTS[subject]) {
+      status.textContent = `Зараз у БД лише ${questions.length} питань із потрібних ${NMT_COUNTS[subject]}. Тест запуститься з доступних.`;
+    }
+    activeSubject = subject;
+    activeMode = "test";
+    activeQuestions = questions;
+    currentQuestionIndex = 0;
+    correctAnswersCount = 0;
+    activeQuestionResults = [];
+    setTimeout(() => {
+      closeModal();
+      showScreen("screen-test");
+      renderQuestion("test");
+    }, 250);
+  });
+}
+
+function getQuestionCorrect(q) {
+  const c = q.correct_answer || {};
+  if (typeof c === "string") return { value: c };
+  return c;
+}
+
+function normalizeLetter(v) {
+  const s = String(v ?? "").trim().toLowerCase();
+  const map = { а: "a", б: "b", в: "c", г: "d" };
+  return map[s] || s;
+}
+
+function isSingleChoiceCorrect(q, index, value) {
+  const c = getQuestionCorrect(q);
+  if (c.index != null) return Number(c.index) === index;
+  const target = normalizeLetter(c.option ?? c.value);
+  if (["a", "b", "c", "d"].includes(target)) return target === ["a", "b", "c", "d"][index];
+  if (target !== "" && value != null) return String(value).trim() === String(c.value ?? target).trim();
+  return false;
+}
+
+function renderQuestion(mode) {
+  const q = activeQuestions[currentQuestionIndex];
+  const prefix = mode === "test" ? "test" : "session";
+  const total = activeQuestions.length;
+  const progress = ((currentQuestionIndex + 1) / total) * 100;
+  document.getElementById(`${prefix}-progress-label`).textContent = `Питання ${currentQuestionIndex + 1} з ${total}`;
+  document.getElementById(`${prefix}-progress-fill`).style.width = `${progress}%`;
+  document.getElementById(`${prefix}-topic-label`).textContent = mode === "test" ? topicLabel(activeSubject, q.topic) : topicLabel(activeSubject, q.topic);
+  document.getElementById(`${prefix}-question-text`).innerHTML = escapeHtml(q.question_text).replace(/\n/g, "<br>");
+
+  const image = document.getElementById(`${prefix}-image`);
+  image.innerHTML = q.image_path ? `<img class="question-image" src="${escapeHtml(q.image_path)}" alt="Ілюстрація до питання">` : "";
+
+  const options = document.getElementById(`${prefix}-options`);
+  options.innerHTML = "";
+  options.classList.remove("answered");
+
+  if (mode === "session") {
+    const hints = document.getElementById("session-hints");
+    hints.innerHTML = "";
+    if (q.hint1 || q.hint2) {
+      hints.innerHTML = `<button type="button" class="secondary-btn hint-btn" id="hint-btn">Дай підказку</button><div id="hint-text" class="hint-text"></div>`;
+      let used = 0;
+      document.getElementById("hint-btn").addEventListener("click", () => {
+        const text = used === 0 ? q.hint1 : q.hint2;
+        if (!text) { document.getElementById("hint-btn").disabled = true; return; }
+        document.getElementById("hint-text").textContent = text;
+        used++;
+        if (used >= 2 || (used === 1 && !q.hint2)) document.getElementById("hint-btn").disabled = true;
+      });
+    }
+  }
+
+  if (q.question_type === "matching") renderMatchingQuestion(q, options, mode);
+  else if (q.question_type === "short_answer") renderShortAnswerQuestion(q, options, mode);
+  else if (q.question_type === "table") renderTableQuestion(q, options, mode);
+  else renderSingleChoiceQuestion(q, options, mode);
+
+  const nextBtn = document.getElementById(`${prefix}-next-btn`);
+  const finishBtn = document.getElementById(`${prefix}-finish-btn`);
+  nextBtn.style.display = "none";
+  finishBtn.style.display = "none";
+}
+
+function markAnswer(mode, isCorrect) {
+  const prefix = mode === "test" ? "test" : "session";
+  const options = document.getElementById(`${prefix}-options`);
+  if (options.classList.contains("answered")) return false;
+  options.classList.add("answered");
+  activeQuestionResults[currentQuestionIndex] = !!isCorrect;
+  if (isCorrect) correctAnswersCount++;
+  const nextBtn = document.getElementById(`${prefix}-next-btn`);
+  const finishBtn = document.getElementById(`${prefix}-finish-btn`);
+  if (currentQuestionIndex < activeQuestions.length - 1) nextBtn.style.display = "block";
+  else finishBtn.style.display = "block";
+  return true;
+}
+
+function renderSingleChoiceQuestion(q, container, mode) {
+  const letters = ["A", "B", "C", "D"];
+  q.options.forEach((text, index) => {
+    if (text == null || String(text).trim() === "") return;
+    const el = document.createElement("div");
+    el.className = "session-option";
+    el.innerHTML = `<div class="session-option-letter">${letters[index]}</div><span>${escapeHtml(text)}</span>`;
+    el.addEventListener("click", () => {
+      if (container.classList.contains("answered")) return;
+      const correct = isSingleChoiceCorrect(q, index, text);
+      el.classList.add(correct ? "correct" : "wrong");
+      if (!correct) {
+        const c = getQuestionCorrect(q);
+        const ci = c.index != null ? Number(c.index) : ["a","b","c","d"].indexOf(normalizeLetter(c.option));
+        if (ci >= 0 && container.children[ci]) container.children[ci].classList.add("correct");
+      }
+      markAnswer(mode, correct);
+    });
+    container.appendChild(el);
+  });
+}
+
+function renderShortAnswerQuestion(q, container, mode) {
+  container.innerHTML = `<div class="short-answer-wrap"><input id="short-answer-input" class="auth-input" type="text" placeholder="Введіть відповідь"><button id="short-answer-btn" class="primary-btn" type="button">Перевірити</button><div id="short-answer-result"></div></div>`;
+  document.getElementById("short-answer-btn").addEventListener("click", () => {
+    const value = document.getElementById("short-answer-input").value.trim();
+    if (!value) return;
+    const c = getQuestionCorrect(q);
+    const expected = String(c.value ?? c.option ?? "").trim();
+    const correct = value.toLowerCase() === expected.toLowerCase();
+    document.getElementById("short-answer-result").textContent = correct ? "Правильно" : `Неправильно. Правильна відповідь: ${expected}`;
+    markAnswer(mode, correct);
+  });
+}
+
+function renderMatchingQuestion(q, container, mode) {
+  const left = Array.isArray(q.matching_left) ? q.matching_left : [];
+  const right = Array.isArray(q.matching_right) ? q.matching_right : [];
+  const correct = getQuestionCorrect(q);
+  if (!left.length || !right.length) {
+    container.innerHTML = "<p>Для завдання на відповідність не заповнені matching_left / matching_right.</p>";
+    return;
+  }
+  container.innerHTML = left.map((item, i) => {
+    const id = typeof item === "object" ? (item.id ?? i + 1) : i + 1;
+    const label = typeof item === "object" ? (item.label ?? item.text ?? id) : item;
+    return `<div class="matching-row"><span>${escapeHtml(label)}</span><select class="matching-select" data-id="${escapeHtml(id)}"><option value="">—</option>${right.map((r,j)=>{ const rid=typeof r==='object'?(r.id??String.fromCharCode(65+j)):String.fromCharCode(65+j); const rl=typeof r==='object'?(r.label??r.text??rid):r; return `<option value="${escapeHtml(rid)}">${escapeHtml(rl)}</option>`; }).join("")}</select></div>`;
+  }).join("") + `<button id="matching-btn" class="primary-btn" type="button">Перевірити</button><div id="matching-result"></div>`;
+  document.getElementById("matching-btn").addEventListener("click", () => {
+    const selects = [...container.querySelectorAll(".matching-select")];
+    let correctCount = 0;
+    selects.forEach(sel => {
+      const key = sel.dataset.id;
+      const expected = correct[key] ?? correct[String(key)];
+      if (String(sel.value) === String(expected ?? "__never__")) correctCount++;
+    });
+    const ok = correctCount === selects.length;
+    document.getElementById("matching-result").textContent = `Правильно: ${correctCount} з ${selects.length}`;
+    markAnswer(mode, ok);
+  });
+}
+
+function renderTableQuestion(q, container, mode) {
+  const data = q.table_data;
+  if (!data) { container.innerHTML = "<p>Для табличного завдання не заповнено table_data.</p>"; return; }
+  let headers = [], rows = [];
+  if (Array.isArray(data)) rows = data;
+  else { headers = data.headers || data.columns || []; rows = data.rows || []; }
+  if (!headers.length && rows.length && Array.isArray(rows[0])) headers = rows[0].map((_,i)=>`Колонка ${i+1}`);
+  container.innerHTML = `<div class="question-table-wrap"><table class="question-table"><thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${(Array.isArray(r)?r:Object.values(r)).map(v=>`<td>${escapeHtml(v)}</td>`).join("")}</tr>`).join("")}</tbody></table></div><div class="table-answer-wrap"><input id="table-answer-input" class="auth-input" type="text" placeholder="Введіть відповідь"><button id="table-answer-btn" class="primary-btn" type="button">Перевірити</button><div id="table-answer-result"></div></div>`;
+  document.getElementById("table-answer-btn").addEventListener("click", () => {
+    const value = document.getElementById("table-answer-input").value.trim();
+    const c = getQuestionCorrect(q);
+    const expected = String(c.value ?? c.option ?? "").trim();
+    const ok = value.toLowerCase() === expected.toLowerCase();
+    document.getElementById("table-answer-result").textContent = ok ? "Правильно" : `Неправильно. Правильна відповідь: ${expected}`;
+    markAnswer(mode, ok);
+  });
+}
+
+function advanceQuestion(mode) {
+  if (currentQuestionIndex >= activeQuestions.length - 1) return;
+  currentQuestionIndex++;
+  renderQuestion(mode);
+}
+
+async function finishLearningSession() {
+  const expGained = correctAnswersCount * 10;
+  const newXp = (currentProfile.xp || 0) + expGained;
+  const updates = {
+    xp: newXp,
+    level: Math.floor(newXp / 100) + 1,
+    [`${activeSubject}_questions`]: (currentProfile[`${activeSubject}_questions`] || 0) + activeQuestions.length,
+    [`${activeSubject}_correct`]: (currentProfile[`${activeSubject}_correct`] || 0) + correctAnswersCount
+  };
+  const topicProgress = { ...(currentProfile.topic_progress || {}) };
+  activeQuestions.forEach(q => {
+    const key = `${activeSubject}:${q.topic}`;
+    topicProgress[key] = (topicProgress[key] || 0) + 1;
+  });
+  updates.topic_progress = topicProgress;
+
+  const { data, error } = await supabaseClient.from("profiles").update(updates).eq("id", currentUser.id).select().single();
+  if (error) throw error;
+  currentProfile = data;
+  leaderboardCache = null;
+  renderDashboard();
+  alert(`Сесію завершено! Правильних відповідей: ${correctAnswersCount} з ${activeQuestions.length}. Нараховано ${expGained} XP.`);
+  showScreen("screen-dashboard");
+}
+
+function estimateTrialScore(subject, correct, total) {
+  // Результат для профілю/графіка зберігаємо у звичній шкалі 100–200.
+  // Це пропорційний орієнтир; офіційну таблицю переведення можна підключити окремо.
+  return total ? Math.round(100 + (correct / total) * 100) : 100;
+}
+
+async function finishTrialTest() {
+  const score = estimateTrialScore(activeSubject, correctAnswersCount, activeQuestions.length);
+  const history = Array.isArray(currentProfile[`${activeSubject}_history`]) ? [...currentProfile[`${activeSubject}_history`]] : [];
+  history.push(score);
+  const { data, error } = await supabaseClient.from("profiles").update({
+    [`${activeSubject}_history`]: history,
+    [`${activeSubject}_score`]: score
+  }).eq("id", currentUser.id).select().single();
+  if (error) throw error;
+  currentProfile = data;
+  leaderboardCache = null;
+  renderDashboard();
+  alert(`Пробний тест завершено! Правильних відповідей: ${correctAnswersCount} з ${activeQuestions.length}. Результат: ${score}/200.`);
+  showScreen("screen-dashboard");
+}
+
+document.getElementById("btn-session").addEventListener("click", openSessionSetup);
+document.getElementById("btn-test").addEventListener("click", openTrialTestSetup);
+document.getElementById("session-next-btn").addEventListener("click", () => advanceQuestion("session"));
+document.getElementById("test-next-btn").addEventListener("click", () => advanceQuestion("test"));
+document.getElementById("session-finish-btn").addEventListener("click", async () => {
+  try { await finishLearningSession(); } catch (e) { alert("Помилка збереження прогресу: " + e.message); }
+});
+document.getElementById("test-finish-btn").addEventListener("click", async () => {
+  try { await finishTrialTest(); } catch (e) { alert("Помилка збереження результату тесту: " + e.message); }
+});
+document.getElementById("session-exit-btn").addEventListener("click", () => showScreen("screen-dashboard"));
+document.getElementById("test-exit-btn").addEventListener("click", () => showScreen("screen-dashboard"));
+
+/* ---------------------------------------------------------------------
+   НАВІГАЦІЯ
    --------------------------------------------------------------------- */
 document.querySelectorAll(".nav-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
-
     const nav = btn.dataset.nav;
-    const knownViews = ["tutor", "analytics", "profile", "leaderboard"];
-    if (knownViews.includes(nav)) {
-      document.querySelectorAll(".content-view").forEach(v => v.classList.remove("active"));
-      document.getElementById(`view-${nav}`).classList.add("active");
-
-      if (nav === "analytics") renderAnalytics();
-      if (nav === "profile") renderProfileView();
-      if (nav === "leaderboard") loadLeaderboard();
-    }
+    document.querySelectorAll(".content-view").forEach(v => v.classList.remove("active"));
+    const target = document.getElementById(`view-${nav}`);
+    if (target) target.classList.add("active");
+    if (nav === "analytics") renderAnalytics();
+    if (nav === "profile") renderProfileView();
+    if (nav === "leaderboard") loadLeaderboard();
   });
 });
 
-document.querySelectorAll(".tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    tab.classList.add("active");
-  });
-});
-
-/* ---------------------------------------------------------------------
-   СТАРТ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ (АВТОВХОД ИЗ СЕССИИ SUPABASE)
-   --------------------------------------------------------------------- */
 window.addEventListener("DOMContentLoaded", async () => {
   setAuthMode("login");
-
-  // Проверяем существующую сессию Supabase
   const { data: { session } } = await supabaseClient.auth.getSession();
-
   if (session && session.user) {
     currentUser = session.user;
     await checkAndLoadProfile();
