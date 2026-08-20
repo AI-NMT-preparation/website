@@ -388,6 +388,8 @@ function normalizeQuestion(row, subject, topicKey) {
   };
 }
 
+let lastFetchErrors = [];
+
 async function fetchTopicQuestions(subject, topicKey) {
   // 1. Новий універсальний формат: public.questions
   const universal = await supabaseClient
@@ -399,6 +401,9 @@ async function fetchTopicQuestions(subject, topicKey) {
   if (!universal.error && universal.data && universal.data.length) {
     return universal.data.map(row => normalizeQuestion(row, subject, topicKey));
   }
+  if (universal.error) {
+    console.warn(`public.questions (${subject}/${topicKey}):`, universal.error.message);
+  }
 
   // 2. Формат, який уже є у користувача: math.equations_inequalities,
   // ukrainian.syntax, history.kyivan_rus тощо.
@@ -409,6 +414,7 @@ async function fetchTopicQuestions(subject, topicKey) {
 
   if (direct.error) {
     console.warn(`Не вдалося прочитати ${subject}.${topicKey}:`, direct.error.message);
+    lastFetchErrors.push(`${subject}.${topicKey}: ${direct.error.message}`);
     return [];
   }
   return (direct.data || []).map(row => normalizeQuestion(row, subject, topicKey));
@@ -424,6 +430,7 @@ function shuffle(array) {
 }
 
 async function loadQuestionsForPlan(subject, plan) {
+  lastFetchErrors = [];
   const result = [];
   for (const item of plan) {
     const rows = await fetchTopicQuestions(subject, item.topic);
@@ -434,6 +441,7 @@ async function loadQuestionsForPlan(subject, plan) {
 }
 
 async function loadNmtQuestions(subject) {
+  lastFetchErrors = [];
   const topics = TOPICS[subject] || [];
   const pools = [];
   for (const topic of topics) {
@@ -529,7 +537,9 @@ function openSessionSetup() {
     status.textContent = "Завантажую питання з таблиць...";
     const questions = await loadQuestionsForPlan(select.value, plan);
     if (!questions.length) {
-      status.textContent = "У вибраних таблицях немає питань. Перевір назви схем/таблиць та дані.";
+      status.textContent = lastFetchErrors.length
+        ? `Помилка доступу до таблиць: ${lastFetchErrors.join(" | ")}. Найімовірніше схему потрібно додати в "Exposed schemas" у Supabase (Project Settings → Data API) та перевірити RLS.`
+        : "У вибраних таблицях немає питань. Перевір назви схем/таблиць та дані.";
       return;
     }
     activeSubject = select.value;
@@ -565,7 +575,9 @@ function openTrialTestSetup() {
     status.textContent = "Формую тест з усіх доступних таблиць...";
     const questions = await loadNmtQuestions(subject);
     if (!questions.length) {
-      status.textContent = "Не знайдено питань. Додай їх у public.questions або у таблиці тем.";
+      status.textContent = lastFetchErrors.length
+        ? `Помилка доступу до таблиць: ${lastFetchErrors.join(" | ")}. Найімовірніше схему потрібно додати в "Exposed schemas" у Supabase (Project Settings → Data API) та перевірити RLS.`
+        : "Не знайдено питань. Додай їх у public.questions або у таблиці тем.";
       return;
     }
     if (questions.length < NMT_COUNTS[subject]) {
