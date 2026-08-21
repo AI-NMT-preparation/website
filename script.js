@@ -598,8 +598,9 @@ function renderCurrentQuestionTimer() {
 function startQuestionTimer() {
   stopQuestionTimer();
 
-  // Отвеченное задание считается завершённым. При возврате его таймер
-  // остаётся замороженным и больше не продолжает отсчёт.
+  // После перехода на следующий вопрос таймер правильного/любого
+  // уже отвеченного вопроса остаётся замороженным. Неотвеченный
+  // вопрос при возврате снова запускает отсчёт с накопленного времени.
   if (questionAnswers[currentQuestionIndex]) {
     questionStartedAt = null;
     renderCurrentQuestionTimer();
@@ -626,7 +627,7 @@ function stopQuestionTimer() {
   }
 }
 
-function commitCurrentQuestionTime() {
+function captureCurrentQuestionElapsed() {
   if (questionStartedAt == null) {
     renderCurrentQuestionTimer();
     return;
@@ -670,10 +671,24 @@ function stopAllTimers() {
 }
 
 function buildCompletedAnalytics(mode, subject) {
-  const times = activeQuestions.map((_, i) => Math.max(0, Math.round(questionElapsedMs[i] || 0)));
-  const totalTime = times.reduce((sum, value) => sum + value, 0);
   const totalQuestions = activeQuestions.length;
   const correct = tallyResults();
+
+  // Временная аналитика показывается ТОЛЬКО для правильных ответов.
+  const questions = activeQuestions
+    .map((q, i) => ({ q, i, answer: questionAnswers[i] }))
+    .filter(({ answer }) => !!(answer && answer.correct))
+    .map(({ q, i }) => ({
+      number: i + 1,
+      topic: q.topic,
+      questionType: q.question_type,
+      timeMs: Math.max(0, Math.round(questionElapsedMs[i] || 0)),
+      limitSec: getRecommendedSeconds(subject, i + 1, q),
+      correct: true
+    }));
+
+  const totalTime = questions.reduce((sum, item) => sum + item.timeMs, 0);
+  const averageMs = questions.length ? totalTime / questions.length : 0;
 
   return {
     mode,
@@ -681,17 +696,11 @@ function buildCompletedAnalytics(mode, subject) {
     totalQuestions,
     correct,
     accuracy: totalQuestions ? Math.round((correct / totalQuestions) * 100) : 0,
-    averageMs: totalQuestions ? totalTime / totalQuestions : 0,
+    timedQuestionsCount: questions.length,
+    averageMs,
     totalTime,
     overallLimitMs: mode === "test" ? 60 * 60 * 1000 : null,
-    questions: activeQuestions.map((q, i) => ({
-      number: i + 1,
-      topic: q.topic,
-      questionType: q.question_type,
-      timeMs: times[i],
-      limitSec: getRecommendedSeconds(subject, i + 1, q),
-      correct: !!(questionAnswers[i] && questionAnswers[i].correct)
-    }))
+    questions
   };
 }
 
@@ -705,13 +714,20 @@ function renderCompletedAnalytics() {
 
   document.getElementById("result-accuracy").textContent = `${data.accuracy}%`;
   document.getElementById("result-score-line").textContent = `${data.correct} з ${data.totalQuestions} правильних`;
-  document.getElementById("result-avg-time").textContent = formatTime(data.averageMs);
-  document.getElementById("result-time-line").textContent = "Середнє за всіма питаннями";
-  document.getElementById("result-total-time").textContent = formatTime(data.totalTime);
-  document.getElementById("result-total-limit").textContent =
-    data.overallLimitMs ? `Загальний час тесту: ${formatTime(data.overallLimitMs)}` : "";
+  document.getElementById("result-avg-time").textContent = data.timedQuestionsCount ? formatTime(data.averageMs) : "—";
+  document.getElementById("result-time-line").textContent = data.timedQuestionsCount
+    ? "Середнє лише за правильними відповідями"
+    : "Час не показується: немає правильних відповідей";
+  document.getElementById("result-total-time").textContent = data.timedQuestionsCount ? formatTime(data.totalTime) : "—";
+  const totalLimitEl = document.getElementById("result-total-limit");
+  if (totalLimitEl) totalLimitEl.textContent = "";
 
   const host = document.getElementById("result-questions-list");
+  if (!data.questions.length) {
+    host.innerHTML = `<div class="result-no-time">⏱️ Часова аналітика відсутня: у цій спробі немає правильних відповідей.</div>`;
+    showScreen("screen-result");
+    return;
+  }
   host.innerHTML = data.questions.map(item => {
     const limitMs = item.limitSec * 1000;
     const ratio = limitMs > 0 ? item.timeMs / limitMs : 0;
@@ -1005,7 +1021,6 @@ function renderSingleChoiceQuestion(q, container, mode, savedAnswer) {
       el.classList.add("selected");
       const correct = isSingleChoiceCorrect(q, index, text);
       recordAnswer(mode, { type: "single", selectedIndex: index, correct });
-      commitCurrentQuestionTime();
     });
     container.appendChild(el);
   });
@@ -1033,7 +1048,6 @@ function renderShortAnswerQuestion(q, container, mode, savedAnswer) {
     resultEl.textContent = correct ? "Правильно" : `Неправильно. Правильна відповідь: ${expected}`;
     renderMathIn(resultEl);
     recordAnswer(mode, { type: "short", value, expected, correct });
-    commitCurrentQuestionTime();
   });
 }
 
@@ -1073,7 +1087,6 @@ function renderMatchingQuestion(q, container, mode, savedAnswer) {
     const ok = correctCount === selects.length;
     resultEl.textContent = `Правильно: ${correctCount} з ${selects.length}`;
     recordAnswer(mode, { type: "matching", selections, correctCount, total: selects.length, correct: ok });
-    commitCurrentQuestionTime();
   });
 }
 
@@ -1098,23 +1111,28 @@ function renderTableQuestion(q, container, mode, savedAnswer) {
     const ok = value.toLowerCase() === expected.toLowerCase();
     resultEl.textContent = ok ? "Правильно" : `Неправильно. Правильна відповідь: ${expected}`;
     recordAnswer(mode, { type: "table", value, expected, correct: ok });
-    commitCurrentQuestionTime();
   });
 }
 
 function advanceQuestion(mode) {
   if (currentQuestionIndex >= activeQuestions.length - 1) return;
-  // Фиксируем время текущего вопроса. Если ответа нет — при возврате
-  // таймер продолжится с накопленного значения. Если ответ есть — таймер
-  // уже остановлен в момент ответа и при возврате не запустится.
-  commitCurrentQuestionTime();
+
+  // Время сохраняем при уходе со страницы вопроса.
+  // Но замораживаем его только когда выполнены ОБА условия:
+  // 1) есть выбранный/проверенный ответ;
+  // 2) пользователь нажал «Следующее».
+  captureCurrentQuestionElapsed();
   currentQuestionIndex++;
   renderQuestion(mode);
 }
 
 function goToPreviousQuestion(mode) {
   if (currentQuestionIndex <= 0) return;
-  commitCurrentQuestionTime();
+
+  // Для «Назад» таймер не считается завершённым. Мы только сохраняем
+  // уже набежавшее время; при возврате на неотвеченный вопрос отсчёт
+  // снова продолжится. У отвеченного вопроса он останется замороженным.
+  captureCurrentQuestionElapsed();
   currentQuestionIndex--;
   renderQuestion(mode);
 }
@@ -1151,7 +1169,7 @@ function tallyRawScore() {
 }
 
 async function finishLearningSession() {
-  commitCurrentQuestionTime();
+  captureCurrentQuestionElapsed();
   correctAnswersCount = tallyResults();
 
   const expGained = correctAnswersCount * 10;
@@ -1229,7 +1247,7 @@ function lookupNmtScore(subject, raw) {
 }
 
 async function finishTrialTest(autoFinished = false) {
-  commitCurrentQuestionTime();
+  captureCurrentQuestionElapsed();
   correctAnswersCount = tallyResults();
 
   const { raw, max } = tallyRawScore();

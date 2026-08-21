@@ -2923,6 +2923,16 @@ body {
 .result-q-status.good { color: var(--positive); }
 .result-q-status.slow { color: #ff4d61; }
 
+.result-no-time {
+  padding: 30px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  background: var(--bg-panel-alt);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+}
+
 .result-q-limit-note {
   color: var(--text-muted);
   font-size: 10px;
