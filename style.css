@@ -2945,3 +2945,78 @@ body {
   .top-timer-wrap { gap: 6px; }
   .question-timer, .test-total-timer { min-width: 56px; padding: 6px 8px; }
 }
+
+/* ==================== КОНТАКТИ / ПРО ПРОЄКТ ==================== */
+.info-page-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 24px;
+  max-width: 760px;
+}
+
+.info-page-icon {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 24px;
+}
+
+.info-page-content h3 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.info-page-content p {
+  margin: 0 0 14px;
+  color: var(--text-muted);
+  line-height: 1.65;
+  font-size: 14px;
+}
+
+.contact-email-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform .15s ease, background .2s ease;
+}
+
+.contact-email-link:hover {
+  background: rgba(139, 92, 246, .28);
+  transform: translateY(-1px);
+}
+
+.info-page-note {
+  margin-top: 10px !important;
+  font-size: 11px !important;
+}
+
+.about-placeholder-card {
+  min-height: 320px;
+  max-width: 900px;
+}
+
+.about-placeholder {
+  min-height: 270px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,.012);
+}
+
+@media (max-width: 700px) {
+  .info-page-card { flex-direction: column; }
+}
