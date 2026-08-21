@@ -1,0 +1,2937 @@
+/* ==================== ЗАГАЛЬНІ ЗМІННІ ==================== */
+:root {
+  --bg-main: #131317;
+  --bg-panel: #1b1c22;
+  --bg-panel-alt: #202127;
+  --border-color: #2c2d34;
+  --text-main: #eceef1;
+  --text-muted: #9a9ba3;
+  --accent: #8b5cf6;       /* фірмовий колір Bolest.ai (фіолетовий) */
+  --accent-hover: #a179f7;
+  --accent-soft: rgba(139, 92, 246, 0.15);
+  --positive: #4ade80;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.accent-text { color: var(--accent); }
+
+/* ==================== ЕКРАНИ (LOGIN / SETUP / DASHBOARD) ==================== */
+.screen {
+  display: none;
+  min-height: 100vh;
+  width: 100%;
+}
+.screen.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+}
+
+.logo-text {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0 0 6px;
+}
+
+.auth-subtitle {
+  color: var(--text-muted);
+  margin: 0 0 28px;
+  font-size: 14px;
+}
+
+#username-input,
+#password-input {
+  width: 100%;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+#username-input:focus,
+#password-input:focus { border-color: var(--accent); }
+
+.auth-switch {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 16px 0 0;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 0 0 4px;
+}
+.link-btn:hover { color: var(--accent-hover); text-decoration: underline; }
+
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.auth-note {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: #f87171;
+  min-height: 14px;
+  text-align: center;
+}
+
+/* ---------- Екран налаштування профілю ---------- */
+.setup-card { max-width: 420px; text-align: left; }
+.setup-card h2 { text-align: center; margin: 0 0 24px; font-size: 22px; }
+
+.avatar-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.avatar-preview {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: var(--bg-panel-alt);
+  border: 2px dashed var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+.avatar-preview:hover { border-color: var(--accent); }
+.avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+#avatar-placeholder { font-size: 30px; color: var(--text-muted); }
+
+.hint { font-size: 12px; color: var(--text-muted); margin: 8px 0 0; }
+
+.field-label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 16px 0 6px;
+}
+
+#nickname-input,
+#description-input {
+  width: 100%;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+#nickname-input:focus,
+#description-input:focus { border-color: var(--accent); }
+
+#description-input {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.description-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.secondary-btn {
+  align-self: flex-end;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.secondary-btn:hover { background: rgba(139, 92, 246, 0.28); }
+
+.primary-btn {
+  width: 100%;
+  margin-top: 26px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.primary-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+/* ==================== ГОЛОВНА СТОРІНКА (DASHBOARD) ==================== */
+.app-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr 320px;
+  gap: 20px;
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 24px;
+  align-items: start;
+}
+
+/* ---------- Ліва колонка ---------- */
+.sidebar-left {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 800;
+  padding: 4px 4px 0;
+}
+
+.main-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 8px;
+}
+
+.nav-btn {
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  text-align: left;
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 0;
+}
+
+/* анімація наведення: заливка зліва направо */
+.nav-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0;
+  background: var(--accent-soft);
+  z-index: -1;
+  transition: width 0.35s ease;
+}
+.nav-btn:hover::before,
+.nav-btn.active::before {
+  width: 100%;
+}
+.nav-btn.active { color: var(--accent); }
+.nav-btn span { position: relative; }
+
+.score-block {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+}
+
+.score-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.collapse-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.subject-row {
+  padding: 12px 0;
+  border-top: 1px solid var(--border-color);
+}
+.subject-row:first-of-type { border-top: none; }
+
+.subject-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.subject-name {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.subject-score {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.score-diff {
+  font-size: 12px;
+  color: var(--positive);
+  font-weight: 700;
+}
+
+.subject-range {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ---------- Центральна колонка ---------- */
+.content-center {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  min-height: 500px;
+}
+
+.project-info h2 {
+  margin-top: 0;
+  font-size: 22px;
+}
+
+/* ==================== АНАЛІТИКА ==================== */
+.content-view { display: none; }
+.content-view.active { display: block; }
+
+#view-analytics h2 {
+  margin-top: 0;
+  font-size: 22px;
+}
+
+.analytics-columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 20px 0 24px;
+}
+
+.analytics-col {
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.analytics-col-title {
+  font-size: 14px;
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.analytics-stat {
+  padding: 8px 0;
+  border-top: 1px solid var(--border-color);
+}
+.analytics-stat:first-of-type { border-top: none; }
+.analytics-stat strong { display: block; font-size: 20px; }
+.analytics-stat span { font-size: 12px; color: var(--text-muted); }
+
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 28px;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.analytics-table th,
+.analytics-table td {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 13px;
+}
+.analytics-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+}
+.analytics-table td { font-size: 15px; font-weight: 700; }
+.analytics-table tr:not(:last-child) td { border-bottom: 1px solid var(--border-color); }
+
+.legend-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.dot-math { background: #f472b6; }
+.dot-ukrainian { background: #facc15; }
+.dot-history { background: #4ade80; }
+
+.analytics-chart-block h3 {
+  font-size: 15px;
+  margin: 0 0 14px;
+}
+
+#analytics-chart {
+  width: 100%;
+  height: 260px;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.chart-legend {
+  display: flex;
+  gap: 18px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.legend-item {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.chart-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 10px;
+}
+
+/* ==================== ПРОФІЛЬ ==================== */
+.profile-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 0 10px;
+}
+
+.profile-top-row {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  margin-bottom: 28px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.profile-level {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.profile-avatar-big {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: var(--bg-panel-alt);
+  border: 2px dashed var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+.profile-avatar-big img { width: 100%; height: 100%; object-fit: cover; }
+#profile-avatar-placeholder {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 0 10px;
+}
+
+.profile-nickname { font-size: 20px; margin: 0 0 8px; }
+.profile-description {
+  font-size: 13px;
+  color: var(--text-muted);
+  max-width: 360px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ==================== ЛІДЕРБОРД ==================== */
+#view-leaderboard h2 { margin-top: 0; font-size: 22px; }
+
+.leaderboard-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 16px 0 22px;
+}
+
+.filter-btn {
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.filter-btn:hover { color: var(--text-main); }
+.filter-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+}
+
+.leaderboard-rank {
+  width: 22px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.leaderboard-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.leaderboard-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.leaderboard-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.leaderboard-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.leaderboard-empty {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ==================== МОДАЛКА-МАЙСТЕР (вибір тем / кількості питань) ==================== */
+.modal-box-wide { max-width: 560px; }
+
+.topic-picker {
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.topic-picker-subject {
+  margin-bottom: 16px;
+}
+.topic-picker-subject h4 {
+  font-size: 13px;
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topic-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 0;
+  font-size: 13px;
+  cursor: pointer;
+}
+.topic-checkbox-row input { accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
+
+.slider-row {
+  padding: 10px 0;
+  border-top: 1px solid var(--border-color);
+}
+.slider-row:first-child { border-top: none; }
+
+.slider-row-label {
+  font-size: 13px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+.slider-row-label .slider-value { color: var(--accent); font-weight: 700; }
+
+.slider-row input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.subject-radio-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.subject-radio-option {
+  flex: 1;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.subject-radio-option input { display: none; }
+.subject-radio-option.selected {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.modal-error { color: #f87171; font-size: 12px; margin-top: 10px; text-align: center; }
+
+/* ==================== ЕКРАН НАВЧАЛЬНОЇ СЕСІЇ / ПРОБНОГО ТЕСТУ ==================== */
+.session-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 0;
+  height: 100vh;
+}
+
+.session-hint-panel {
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-color);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+}
+.session-hint-panel h3 { margin: 0 0 18px; font-size: 18px; }
+
+.hint-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.hint-btn {
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s ease;
+}
+.hint-btn:hover { border-color: var(--accent); }
+
+.hint-output {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.session-question-panel {
+  padding: 32px 40px;
+  overflow-y: auto;
+}
+
+.session-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.session-top-bar span { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+
+.session-exit-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+}
+.session-exit-btn:hover { color: var(--text-main); }
+
+.session-progress-bar {
+  background: var(--bg-panel-alt);
+  border-radius: 20px;
+  height: 6px;
+  overflow: hidden;
+  margin-bottom: 22px;
+}
+.session-progress-fill, .test-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 20px;
+  transition: width 0.3s ease;
+}
+
+.session-topic-label {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.session-question-text {
+  font-size: 18px;
+  line-height: 1.5;
+  margin-bottom: 26px;
+  max-width: 720px;
+}
+
+.session-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 720px;
+  margin-bottom: 26px;
+}
+
+.session-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-panel-alt);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.session-option:hover { border-color: var(--accent); }
+.session-option.selected { border-color: #ffffff; background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 1px #ffffff inset; }
+.session-option.disabled { pointer-events: none; opacity: 0.7; }
+.session-option.selected-neutral { border-color: var(--accent); }
+
+.session-option-letter {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.session-bottom-actions { max-width: 720px; }
+.session-action-btn { width: auto; padding: 12px 28px; margin-top: 0; }
+
+/* ==================== ПРОБНИЙ ТЕСТ: топбар з навігацією по питаннях ==================== */
+.test-layout {
+  padding: 32px 40px;
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.test-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.test-nav-dropdown-wrap { position: relative; }
+.test-nav-btn {
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.test-nav-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  max-height: 260px;
+  overflow-y: auto;
+  min-width: 160px;
+  z-index: 20;
+  padding: 6px;
+}
+.test-nav-dropdown.active { display: block; }
+
+.test-nav-item {
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.test-nav-item:hover { background: var(--bg-panel-alt); }
+.test-nav-item.answered { color: var(--text-main); }
+.test-nav-item.current { color: var(--accent); font-weight: 700; }
+
+.test-bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  max-width: 720px;
+}
+
+.project-text-placeholder {
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+/* ---------- Права колонка ---------- */
+.sidebar-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.level-block,
+.streak-block,
+.stats-block,
+.priorities-block {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+}
+
+.level-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.level-points { color: var(--text-muted); font-weight: 500; }
+
+.xp-bar {
+  background: var(--bg-panel-alt);
+  border-radius: 20px;
+  height: 8px;
+  overflow: hidden;
+}
+.xp-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 20px;
+}
+
+.streak-title {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.streak-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.day-cell {
+  background: var(--bg-panel-alt);
+  border-radius: 8px;
+  padding: 8px 0;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.stats-tabs-static {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+}
+
+.stats-numbers {
+  display: flex;
+  justify-content: space-between;
+  text-align: center;
+}
+.stat-item strong { display: block; font-size: 18px; }
+.stat-item span { font-size: 11px; color: var(--text-muted); }
+
+.priorities-block h3 {
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+
+.priorities-list {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding-right: 4px;
+}
+
+.session-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-color);
+}
+.session-item:first-child { border-top: none; }
+.session-topic-name { font-size: 13px; font-weight: 600; }
+
+.session-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.session-topic {
+  display: inline-block;
+  width: fit-content;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #14151a;
+}
+
+/* кольори тем — статичні, як у оригіналі */
+.topic-pink    { background: #f472b6; }
+.topic-yellow  { background: #facc15; }
+.topic-green   { background: #4ade80; }
+.topic-default { background: #9ca3af; }
+
+.session-progress {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.action-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.action-btn.wide {
+  grid-column: 1 / -1;
+}
+
+.action-btn {
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 12px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.action-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0;
+  background: var(--accent-soft);
+  z-index: -1;
+  transition: width 0.35s ease;
+}
+.action-btn:hover::before { width: 100%; }
+.action-btn .plus { color: var(--accent); font-weight: 800; }
+
+/* ==================== МОДАЛЬНЕ ВІКНО ==================== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-box {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+}
+.modal-close:hover { color: var(--text-main); }
+
+.modal-content h3 {
+  margin: 0 0 18px;
+  font-size: 18px;
+}
+
+.modal-field-label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 14px 0 6px;
+}
+
+.modal-content select,
+.modal-content input[type="number"] {
+  width: 100%;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.modal-content select:focus,
+.modal-content input[type="number"]:focus {
+  border-color: var(--accent);
+}
+
+.modal-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 6px 0 0;
+}
+
+.modal-submit-btn {
+  width: 100%;
+  margin-top: 22px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.modal-submit-btn:hover { background: var(--accent-hover); }
+
+.modal-result {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ==================== АДАПТИВНІСТЬ ==================== */
+@media (max-width: 1100px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==================== ФІНАЛЬНЕ ВИРІВНЮВАННЯ DASHBOARD ==================== */
+.app-layout {
+  grid-template-columns: 180px minmax(430px, 1.45fr) 190px minmax(330px, 1.05fr) 220px;
+  grid-template-rows: auto auto;
+  column-gap: 14px;
+  row-gap: 14px;
+  width: min(100%, 1580px);
+  max-width: 1580px;
+  padding: 28px 24px;
+  align-items: start;
+}
+
+.sidebar-left {
+  grid-column: 1;
+  grid-row: 1 / 3;
+}
+
+.content-center {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  min-height: 430px;
+  padding: 28px;
+}
+
+/* Праву панель розкладаємо по окремих блоках, щоб вони не злипалися
+   в одну вузьку колонку. Сам HTML при цьому не змінюється. */
+.sidebar-right { display: contents; }
+
+.level-block {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.stats-block {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.priorities-block {
+  grid-column: 4;
+  grid-row: 1 / 3;
+  min-width: 0;
+  height: 100%;
+}
+
+.action-buttons {
+  grid-column: 5;
+  grid-row: 1 / 3;
+  align-self: start;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.streak-block { display: none !important; }
+
+.level-block,
+.stats-block,
+.priorities-block {
+  padding: 18px;
+}
+
+.priorities-list {
+  max-height: 390px;
+}
+
+.action-btn {
+  min-height: 48px;
+  font-size: 13px;
+}
+
+.action-btn.wide { min-height: 44px; }
+
+.project-info h2 { font-size: 24px; }
+.project-text-placeholder { font-size: 15px; max-width: 680px; }
+
+/* Аналітика: графік залишається після таблиці та статистики, а не збоку. */
+#view-analytics .analytics-chart-block {
+  margin-top: 24px;
+}
+
+#analytics-chart {
+  height: 300px;
+}
+
+@media (max-width: 1250px) {
+  .app-layout {
+    grid-template-columns: 170px minmax(360px, 1fr) 180px minmax(300px, 1fr);
+  }
+  .action-buttons {
+    grid-column: 3 / 5;
+    grid-row: 3;
+  }
+  .priorities-block { grid-column: 4; grid-row: 1 / 3; }
+}
+
+@media (max-width: 900px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+  .sidebar-left,
+  .content-center,
+  .level-block,
+  .stats-block,
+  .priorities-block,
+  .action-buttons {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .sidebar-left,
+  .content-center { min-height: auto; }
+}
+
+/* ==================== DASHBOARD: ОРИГІНАЛЬНЕ РОЗТАШУВАННЯ ====================
+   Три чіткі колонки: меню | основний блок | права панель.
+   Не змінюємо HTML/JS — лише повертаємо потрібну геометрію. */
+@media (min-width: 1251px) {
+  .app-layout {
+    display: grid;
+    grid-template-columns: 195px minmax(0, 630px) 244px;
+    grid-template-rows: auto;
+    column-gap: 20px;
+    row-gap: 20px;
+    width: 1030px;
+    max-width: calc(100vw - 40px);
+    margin: 0 auto;
+    padding: 42px 0;
+    align-items: start;
+  }
+
+  .sidebar-left {
+    grid-column: 1;
+    grid-row: 1;
+    gap: 18px;
+  }
+
+  .content-center {
+    grid-column: 2;
+    grid-row: 1;
+    width: 630px;
+    min-height: 378px;
+    padding: 24px 20px;
+  }
+
+  .project-info h2 {
+    font-size: 20px;
+    margin-bottom: 14px;
+  }
+
+  .project-text-placeholder {
+    font-size: 13px;
+    max-width: 560px;
+  }
+
+  /* Права частина — одна вертикальна колонка, як на референсі. */
+  .sidebar-right {
+    grid-column: 3;
+    grid-row: 1;
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  .level-block,
+  .stats-block,
+  .priorities-block {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: 244px;
+    min-width: 0;
+    padding: 14px;
+  }
+
+  .level-block {
+    min-height: 62px;
+  }
+
+  .stats-block {
+    min-height: 72px;
+  }
+
+  .priorities-block {
+    height: 288px;
+  }
+
+  .priorities-list {
+    max-height: 220px;
+  }
+
+  .action-buttons {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: 244px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .action-btn {
+    min-height: 48px;
+    padding: 9px 7px;
+    font-size: 12px;
+  }
+
+  .action-btn.wide {
+    min-height: 42px;
+  }
+
+  /* Старий блок "дні поспіль" не повинен з'являтися навіть якщо
+     він буде присутній у старій версії розмітки. */
+  .streak-block {
+    display: none !important;
+  }
+}
+
+/* ==================== ФІНАЛЬНИЙ ФІКС LAYOUT ====================
+   Один стабільний grid без накладання блоків. */
+@media (min-width: 1201px) {
+  .app-layout {
+    display: grid;
+    grid-template-columns: 200px minmax(520px, 1fr) 190px 330px 190px;
+    gap: 16px;
+    width: min(100% - 48px, 1500px);
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 34px 0 50px;
+    align-items: start;
+  }
+
+  .sidebar-left,
+  .content-center,
+  .sidebar-right {
+    min-width: 0;
+  }
+
+  .sidebar-left {
+    grid-column: 1;
+    grid-row: 1;
+    gap: 16px;
+  }
+
+  .content-center {
+    grid-column: 2;
+    grid-row: 1;
+    width: auto;
+    min-height: 440px;
+    padding: 28px 24px;
+  }
+
+  .sidebar-right {
+    display: contents !important;
+  }
+
+  .level-block {
+    grid-column: 3;
+    grid-row: 1;
+    width: auto;
+    min-width: 0;
+  }
+
+  .stats-block {
+    grid-column: 3;
+    grid-row: 2;
+    width: auto;
+    min-width: 0;
+    align-self: start;
+  }
+
+  .priorities-block {
+    grid-column: 4;
+    grid-row: 1 / span 2;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    min-height: 430px;
+  }
+
+  .priorities-list {
+    max-height: 355px;
+  }
+
+  .action-buttons {
+    grid-column: 5;
+    grid-row: 1;
+    width: auto;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    align-self: start;
+  }
+
+  .action-btn {
+    min-width: 0;
+    min-height: 52px;
+    padding: 9px 7px;
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  .action-btn.wide {
+    min-height: 46px;
+  }
+
+  .streak-block { display: none !important; }
+}
+
+/* Середні екрани: не стискаємо 5 колонок до стану, де вони починають наїжджати. */
+@media (min-width: 901px) and (max-width: 1200px) {
+  .app-layout {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr) 280px;
+    gap: 16px;
+    width: min(100% - 32px, 1050px);
+    padding: 24px 0 40px;
+  }
+
+  .sidebar-left { grid-column: 1; grid-row: 1; }
+  .content-center { grid-column: 2; grid-row: 1; min-width: 0; }
+  .sidebar-right {
+    grid-column: 3;
+    grid-row: 1;
+    display: flex !important;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .level-block,
+  .stats-block,
+  .priorities-block,
+  .action-buttons {
+    width: 100%;
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+
+  .priorities-block { min-height: 300px; }
+  .action-buttons { display: grid; }
+  .streak-block { display: none !important; }
+}
+
+/* ==================== ФІНАЛЬНИЙ ФІКС МОДАЛКИ СЕСІЇ ==================== */
+#modal-content { min-width: 0; }
+#modal-content .session-setup-title {
+  margin: 0 28px 8px 0;
+  font-size: 20px;
+}
+#modal-content .session-setup-subtitle {
+  margin: 0 0 18px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.topic-picker-subject {
+  padding: 12px 0;
+  border-top: 1px solid var(--border-color);
+}
+.topic-picker-subject:first-child { border-top: none; }
+.topic-picker-subject h4 { font-size: 14px; }
+.topic-checkbox-row {
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.topic-checkbox-row:hover { background: var(--bg-panel-alt); }
+.topic-checkbox-row.subject-all {
+  margin-bottom: 4px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.topic-picker-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+.topic-picker-actions .secondary-btn,
+.topic-picker-actions .modal-submit-btn {
+  width: auto;
+  min-width: 130px;
+  margin-top: 0;
+}
+
+.question-count-list {
+  max-height: 430px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+.question-count-group {
+  padding: 10px 0;
+  border-top: 1px solid var(--border-color);
+}
+.question-count-group:first-child { border-top: none; }
+.question-count-group h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.question-count-row {
+  padding: 12px 0;
+  border-top: 1px solid var(--border-color);
+}
+.question-count-row:first-of-type { border-top: none; }
+.question-count-row .slider-row-label {
+  gap: 12px;
+  line-height: 1.35;
+}
+.session-question-range {
+  display: block;
+  width: 100%;
+  margin: 8px 0 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .app-layout {
+    width: calc(100% - 20px);
+    padding: 14px 0 28px;
+  }
+  .content-center { padding: 20px 16px; }
+  .modal-box { max-width: calc(100% - 24px); padding: 22px 18px; }
+  .topic-picker-actions { flex-direction: column-reverse; }
+  .topic-picker-actions .secondary-btn,
+  .topic-picker-actions .modal-submit-btn { width: 100%; }
+}
+
+/* ==================== ОСТАТОЧНИЙ LAYOUT DASHBOARD ====================
+   На десктопі: ліва колонка | основний блок | ОДНА права колонка.
+   Рівень, статистика та пріоритети більше не розносяться по різних grid-колонках. */
+@media (min-width: 1201px) {
+  .app-layout {
+    display: grid !important;
+    grid-template-columns: 195px minmax(0, 630px) 280px !important;
+    grid-template-rows: auto !important;
+    column-gap: 20px !important;
+    row-gap: 0 !important;
+    width: min(1125px, calc(100vw - 48px)) !important;
+    max-width: 1125px !important;
+    margin: 0 auto !important;
+    padding: 42px 0 50px !important;
+    align-items: start !important;
+  }
+
+  .sidebar-left {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .content-center {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    min-height: 378px !important;
+    padding: 24px 20px !important;
+  }
+
+  /* Весь правий блок — одна вертикальна колонка. */
+  .sidebar-right {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    width: 280px !important;
+    min-width: 0 !important;
+    align-self: start !important;
+  }
+
+  .level-block,
+  .stats-block,
+  .priorities-block,
+  .action-buttons {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .level-block {
+    min-height: 62px !important;
+  }
+
+  .stats-block {
+    min-height: 78px !important;
+  }
+
+  .priorities-block {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: 390px !important;
+  }
+
+  .priorities-list {
+    max-height: 320px !important;
+    overflow-y: auto !important;
+  }
+
+  .action-buttons {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .action-btn {
+    min-width: 0 !important;
+  }
+
+  .action-btn.wide {
+    grid-column: 1 / -1 !important;
+  }
+
+  .streak-block {
+    display: none !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .app-layout {
+    display: grid !important;
+    grid-template-columns: 180px minmax(0, 1fr) 280px !important;
+    grid-template-rows: auto !important;
+    gap: 16px !important;
+    width: min(1050px, calc(100vw - 32px)) !important;
+    padding: 24px 0 40px !important;
+  }
+
+  .sidebar-left { grid-column: 1 !important; grid-row: 1 !important; }
+  .content-center { grid-column: 2 !important; grid-row: 1 !important; min-width: 0 !important; }
+  .sidebar-right {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    min-width: 0 !important;
+  }
+
+  .level-block,
+  .stats-block,
+  .priorities-block,
+  .action-buttons {
+    width: 100% !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+
+  .streak-block { display: none !important; }
+}
+
+/* ============================================================
+   BOLEST.AI — CURRENT INDEX.HTML ADAPTER
+   Этот блок адаптирует старый рабочий style.css к текущему
+   DOM (.dashboard-layout / .sidebar / .main-content).
+   HTML и JS НЕ меняем.
+   ============================================================ */
+
+/* ---------- Dashboard shell ---------- */
+#screen-dashboard.active {
+  display: block !important;
+  min-height: 100vh !important;
+  width: 100% !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+}
+
+.dashboard-layout {
+  width: min(1120px, calc(100vw - 40px)) !important;
+  min-height: 100vh !important;
+  margin: 0 auto !important;
+  padding: 28px 0 50px !important;
+  display: grid !important;
+  grid-template-columns: 190px minmax(0, 1fr) !important;
+  gap: 20px !important;
+  align-items: start !important;
+}
+
+/* ---------- Left sidebar ---------- */
+.sidebar {
+  width: 190px !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  position: sticky !important;
+  top: 24px !important;
+  align-self: start !important;
+}
+
+.sidebar-logo {
+  padding: 2px 4px 4px !important;
+  font-size: 22px !important;
+  line-height: 1.1 !important;
+}
+
+.sidebar-nav {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  padding: 8px !important;
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+.sidebar-nav .nav-btn {
+  width: 100% !important;
+  min-height: 38px !important;
+  padding: 9px 10px !important;
+  border-radius: 8px !important;
+  color: var(--text-main) !important;
+  background: transparent !important;
+  border: 0 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-align: left !important;
+}
+
+.sidebar-nav .nav-btn.active {
+  color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+}
+
+/* ---------- Main area ---------- */
+.main-content {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* ---------- Main dashboard ---------- */
+#view-dashboard.active {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 280px !important;
+  grid-template-rows: auto auto auto !important;
+  gap: 16px !important;
+  align-items: start !important;
+}
+
+#view-dashboard .content-header {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+}
+
+#view-dashboard .content-header h1 {
+  margin: 0 !important;
+  font-size: 20px !important;
+  line-height: 1.25 !important;
+}
+
+#view-dashboard .content-header p {
+  margin: 6px 0 0 !important;
+  color: var(--text-muted) !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+}
+
+/* Level block is in the current header, not in a separate sidebar. */
+.level-badge-box {
+  flex: 0 0 210px !important;
+  width: 210px !important;
+  padding: 12px 14px !important;
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+/* Three subjects must remain separate cards in the center column. */
+#view-dashboard .dashboard-grid {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  min-width: 0 !important;
+}
+
+#view-dashboard .subject-card {
+  width: 100% !important;
+  min-height: 92px !important;
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--border-color) !important;
+  border-bottom: 0 !important;
+  border-radius: 0 !important;
+  padding: 18px !important;
+}
+
+#view-dashboard .subject-card:first-child {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+}
+
+#view-dashboard .subject-card:last-child {
+  border-bottom: 1px solid var(--border-color) !important;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg) !important;
+}
+
+/* Main action row under subjects. */
+#view-dashboard .actions-row {
+  grid-column: 1 !important;
+  grid-row: 3 !important;
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+}
+
+#view-dashboard .actions-row .primary-btn,
+#view-dashboard .actions-row .secondary-btn {
+  width: 100% !important;
+  min-height: 38px !important;
+  margin: 0 !important;
+}
+
+/* Priority card is a separate right section. */
+#view-dashboard > .card.mt-24 {
+  grid-column: 2 !important;
+  grid-row: 2 / span 2 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+#view-dashboard > .card.mt-24 h3 {
+  margin: 0 0 10px !important;
+  font-size: 14px !important;
+}
+
+#view-dashboard .sessions-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 420px !important;
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+}
+
+/* ---------- Analytics: HEADER -> STATS -> GRAPH ---------- */
+#view-analytics.active {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+}
+
+#view-analytics .content-header {
+  order: 1 !important;
+  margin-bottom: 16px !important;
+}
+
+#view-analytics .analytics-grid {
+  order: 2 !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin: 0 !important;
+}
+
+#view-analytics > .card {
+  order: 3 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 16px 0 0 !important;
+}
+
+#view-analytics .chart-container {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+#analytics-chart {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 300px !important;
+}
+
+/* ---------- Other tabs ---------- */
+#view-leaderboard,
+#view-profile {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+#view-leaderboard .card,
+#view-profile .card {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* ---------- Session/test: keep current HTML functional ---------- */
+#screen-session.active,
+#screen-test.active {
+  display: block !important;
+  min-height: 100vh !important;
+  width: 100% !important;
+  padding: 32px 0 !important;
+}
+
+.session-box {
+  width: min(820px, calc(100vw - 32px)) !important;
+  margin: 0 auto !important;
+}
+
+.session-card-main {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.session-options-list {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.session-options-list .session-option {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* ---------- Modal safety ---------- */
+#modal-content {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  max-height: min(80vh, 720px) !important;
+  overflow-y: auto !important;
+}
+
+/* ---------- Long topic names ---------- */
+.subject-card,
+.card,
+.content-header,
+.session-item,
+.analytics-grid > .card {
+  min-width: 0 !important;
+}
+
+.subject-card h3,
+.content-header p,
+.session-item > div {
+  overflow-wrap: anywhere !important;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1050px) {
+  .dashboard-layout {
+    width: min(calc(100% - 32px), 900px) !important;
+    grid-template-columns: 170px minmax(0, 1fr) !important;
+  }
+
+  .sidebar {
+    width: 170px !important;
+  }
+
+  #view-dashboard.active {
+    grid-template-columns: minmax(0, 1fr) 230px !important;
+  }
+
+  .level-badge-box {
+    flex-basis: 200px !important;
+    width: 200px !important;
+  }
+
+  #view-analytics .analytics-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 820px) {
+  .dashboard-layout {
+    width: calc(100% - 24px) !important;
+    grid-template-columns: 1fr !important;
+    padding: 18px 0 32px !important;
+  }
+
+  .sidebar {
+    width: 100% !important;
+    position: static !important;
+  }
+
+  .sidebar-nav {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+
+  #view-dashboard.active {
+    grid-template-columns: 1fr !important;
+  }
+
+  #view-dashboard .content-header,
+  #view-dashboard .dashboard-grid,
+  #view-dashboard > .card.mt-24,
+  #view-dashboard .actions-row {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+  }
+
+  #view-dashboard .content-header {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  .level-badge-box {
+    width: 100% !important;
+    flex-basis: auto !important;
+  }
+
+  #view-dashboard > .card.mt-24 {
+    max-height: none !important;
+  }
+
+  #view-dashboard .sessions-grid {
+    max-height: 360px !important;
+  }
+
+  #view-analytics .analytics-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboard-layout {
+    width: calc(100% - 16px) !important;
+    padding-top: 12px !important;
+  }
+
+  .sidebar-nav {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  #view-dashboard .actions-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .session-top-bar {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* ============================================================
+   BOLEST.AI — ОКРЕМІ СТОРІНКИ РОЗДІЛІВ
+   Головна / Аналітика / Рейтинг / Профіль не повинні
+   відображатися одночасно або з'являтися один під одним.
+   ============================================================ */
+
+/* За замовчуванням кожна вкладка повністю прихована. */
+.main-content > .content-view {
+  display: none !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Активна вкладка — єдина видима. */
+.main-content > .content-view.active {
+  display: block !important;
+}
+
+/* Головна має свій окремий grid, але тільки коли вона активна. */
+.main-content > #view-dashboard.active {
+  display: grid !important;
+}
+
+/* Аналітика займає весь центральний простір і не підтягується
+   під Головну. */
+.main-content > #view-analytics.active {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Рейтинг і профіль — окремі повноцінні сторінки. */
+.main-content > #view-leaderboard.active,
+.main-content > #view-profile.active {
+  display: block !important;
+}
+
+/* Контент кожного розділу не повинен виходити за межі центральної
+   колонки. */
+.main-content {
+  position: relative !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+
+/* На Головній не залишаємо зайвого вертикального простору після
+   завершення її власного контенту. */
+#view-dashboard.active {
+  min-height: 0 !important;
+}
+
+/* Аналітика починається зверху центральної області. */
+#view-analytics.active {
+  min-height: 0 !important;
+  margin: 0 !important;
+}
+
+/* Профіль починається зверху центральної області. */
+#view-profile.active,
+#view-leaderboard.active {
+  min-height: 0 !important;
+  margin: 0 !important;
+}
+
+/* Не дозволяємо старим display-правилам .content-view
+   показувати приховані вкладки. */
+.content-view:not(.active) {
+  display: none !important;
+}
+
+@media (max-width: 820px) {
+  .main-content > #view-dashboard.active,
+  .main-content > #view-analytics.active,
+  .main-content > #view-leaderboard.active,
+  .main-content > #view-profile.active {
+    width: 100% !important;
+  }
+}
+
+/* ============================================================
+   BOLEST.AI — FINAL PAGE ISOLATION + INDEX(9) ADAPTER
+   ============================================================ */
+
+/* One central page at a time. */
+.main-content > .content-view { display:none !important; }
+.main-content > .content-view.active { display:block !important; }
+.main-content > #view-dashboard.active { display:grid !important; }
+.main-content > #view-analytics.active { display:flex !important; flex-direction:column !important; }
+.main-content > #view-leaderboard.active,
+.main-content > #view-profile.active { display:block !important; }
+
+/* Dashboard: score | center/right area. */
+#view-dashboard.dashboard-home.active {
+  display:grid !important;
+  grid-template-columns:180px minmax(0,1fr) !important;
+  gap:16px !important;
+  align-items:start !important;
+  width:100% !important;
+  min-width:0 !important;
+  min-height:0 !important;
+}
+
+.dashboard-score-column { grid-column:1 !important; min-width:0 !important; }
+.dashboard-score-card {
+  padding:14px !important;
+  background:var(--bg-panel) !important;
+  border:1px solid var(--border-color) !important;
+  border-radius:var(--radius-lg) !important;
+}
+.dashboard-score-card h3 { margin:0 0 10px !important; font-size:12px !important; }
+.dashboard-score-item { padding:10px 0 !important; border-top:1px solid var(--border-color) !important; }
+.dashboard-score-item:first-of-type { border-top:0 !important; }
+.dashboard-score-item > div:first-child { font-size:10px !important; color:var(--text-muted) !important; }
+.dashboard-score-value { text-align:right !important; margin-top:-14px !important; }
+.dashboard-score-value span { font-size:16px !important; font-weight:700 !important; }
+.dashboard-score-item p { margin:3px 0 0 !important; font-size:9px !important; color:var(--text-muted) !important; }
+
+.dashboard-main-area { grid-column:2 !important; min-width:0 !important; }
+.dashboard-page-header { margin:0 0 14px !important; }
+.dashboard-page-header h1 { font-size:18px !important; margin:0 !important; }
+.dashboard-page-header p { font-size:10px !important; margin:5px 0 0 !important; color:var(--text-muted) !important; }
+
+.dashboard-main-grid {
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 250px !important;
+  gap:14px !important;
+  align-items:start !important;
+  min-width:0 !important;
+}
+.dashboard-project-card {
+  min-height:375px !important;
+  padding:18px !important;
+}
+.dashboard-project-card h2 { margin:0 0 10px !important; font-size:15px !important; }
+.dashboard-project-card p { margin:0 !important; font-size:10px !important; color:var(--text-muted) !important; }
+
+.dashboard-right-column {
+  display:flex !important;
+  flex-direction:column !important;
+  gap:10px !important;
+  min-width:0 !important;
+}
+.dashboard-level-card { width:100% !important; padding:10px 12px !important; }
+.dashboard-level-card #level-title { font-size:11px !important; font-weight:700 !important; }
+.dashboard-level-card .level-bar { height:5px !important; margin:7px 0 4px !important; }
+.dashboard-level-card .level-pts { font-size:9px !important; }
+
+/* User asked to remove streak and "Today". */
+.dashboard-streak-card { display:none !important; }
+.dashboard-card-tabs span:first-child { display:none !important; }
+.dashboard-card-tabs { margin:0 0 8px !important; padding-bottom:6px !important; }
+.dashboard-card-tabs .active { font-size:10px !important; color:var(--accent) !important; }
+.dashboard-stats-card { padding:10px 12px !important; }
+.dashboard-stats-row { display:grid !important; grid-template-columns:repeat(3,1fr) !important; gap:4px !important; text-align:center !important; }
+.dashboard-stats-row strong { display:block !important; font-size:14px !important; }
+.dashboard-stats-row small { display:block !important; font-size:8px !important; color:var(--text-muted) !important; }
+
+.dashboard-priority-card { padding:12px !important; }
+.dashboard-priority-card h3 { margin:0 0 5px !important; font-size:11px !important; }
+.dashboard-priority-card .sessions-grid { max-height:270px !important; overflow-y:auto !important; }
+.dashboard-priority-card .session-item { padding:7px 0 !important; }
+.dashboard-priority-card .session-item > div { font-size:9px !important; line-height:1.25 !important; }
+.dashboard-priority-card .session-item > div:nth-child(2) { font-size:10px !important; }
+.dashboard-priority-card .session-item > div:nth-child(3) { font-size:9px !important; }
+
+/* Keep both actions when they exist in HTML/JS. */
+.dashboard-actions-row { display:grid !important; grid-template-columns:1fr 1fr !important; gap:8px !important; }
+.dashboard-actions-row .primary-btn,
+.dashboard-actions-row .secondary-btn { width:100% !important; min-height:34px !important; margin:0 !important; font-size:10px !important; padding:8px !important; }
+
+/* Analytics is a completely independent page: stats first, chart second. */
+#view-analytics.active {
+  width:100% !important;
+  max-width:none !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+#view-analytics .content-header { margin:0 0 14px !important; }
+#view-analytics .content-header h1 { font-size:20px !important; margin:0 !important; }
+#view-analytics .content-header p { font-size:10px !important; margin:5px 0 0 !important; }
+#view-analytics .analytics-stats-grid,
+#view-analytics .analytics-grid {
+  order:2 !important;
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:10px !important;
+  margin:0 !important;
+}
+#view-analytics .analytics-stats-grid > .card { padding:14px !important; min-height:120px !important; }
+#view-analytics .analytics-stats-grid > .card:nth-child(1) { border-top:2px solid #f472b6 !important; }
+#view-analytics .analytics-stats-grid > .card:nth-child(2) { border-top:2px solid #facc15 !important; }
+#view-analytics .analytics-stats-grid > .card:nth-child(3) { border-top:2px solid #4ade80 !important; }
+#view-analytics .analytics-stats-grid h4 { margin:0 0 10px !important; font-size:12px !important; }
+#view-analytics .analytics-stats-grid p { margin:5px 0 !important; font-size:10px !important; }
+#view-analytics .analytics-chart-card { order:3 !important; width:100% !important; margin:14px 0 0 !important; padding:14px !important; }
+#view-analytics .analytics-chart-card h3 { margin:0 0 10px !important; font-size:12px !important; }
+#view-analytics .chart-container { width:100% !important; min-width:0 !important; }
+#view-analytics #analytics-chart { width:100% !important; max-width:100% !important; height:280px !important; display:block !important; }
+
+/* Subject colors everywhere on visible subject labels. */
+.subject-card[data-subject="math"],
+.dashboard-score-item[data-subject="math"] { border-top-color:#f472b6 !important; }
+.subject-card[data-subject="ukrainian"],
+.dashboard-score-item[data-subject="ukrainian"] { border-top-color:#facc15 !important; }
+.subject-card[data-subject="history"],
+.dashboard-score-item[data-subject="history"] { border-top-color:#4ade80 !important; }
+
+/* Profile: level and questions are actual badges, not loose text. */
+#view-profile.active .profile-card-box {
+  display:flex !important;
+  align-items:center !important;
+  gap:18px !important;
+  padding:20px !important;
+  background:var(--bg-panel) !important;
+  border:1px solid var(--border-color) !important;
+  border-radius:var(--radius-lg) !important;
+}
+#view-profile .profile-avatar-large {
+  width:76px !important; height:76px !important; flex:0 0 76px !important;
+  border-radius:50% !important; overflow:hidden !important;
+  display:flex !important; align-items:center !important; justify-content:center !important;
+  background:var(--bg-panel-alt) !important; border:1px dashed var(--border-color) !important;
+}
+#view-profile .profile-info-box { min-width:0 !important; }
+#view-profile .profile-info-box h2 { margin:0 0 5px !important; font-size:18px !important; }
+#view-profile .profile-desc { margin:0 0 10px !important; font-size:10px !important; color:var(--text-muted) !important; }
+#view-profile .profile-badges-row { display:flex !important; gap:7px !important; flex-wrap:wrap !important; }
+#view-profile .profile-badges-row .badge {
+  display:inline-flex !important;
+  align-items:center !important;
+  padding:5px 9px !important;
+  border-radius:7px !important;
+  background:var(--accent-soft) !important;
+  border:1px solid rgba(139,92,246,.55) !important;
+  color:var(--accent) !important;
+  font-size:10px !important;
+  font-weight:700 !important;
+}
+#view-profile .profile-badges-row .badge + .badge {
+  color:var(--text-main) !important;
+  background:var(--bg-panel-alt) !important;
+  border-color:var(--border-color) !important;
+}
+
+/* Responsive */
+@media (max-width:1050px) {
+  #view-dashboard.dashboard-home.active { grid-template-columns:160px minmax(0,1fr) !important; }
+  .dashboard-main-grid { grid-template-columns:minmax(0,1fr) 220px !important; }
+}
+@media (max-width:820px) {
+  #view-dashboard.dashboard-home.active { grid-template-columns:1fr !important; }
+  .dashboard-score-column { grid-column:1 !important; }
+  .dashboard-main-area { grid-column:1 !important; }
+  .dashboard-main-grid { grid-template-columns:1fr !important; }
+  .dashboard-project-card { min-height:220px !important; }
+  #view-analytics .analytics-stats-grid,
+  #view-analytics .analytics-grid { grid-template-columns:1fr !important; }
+}
+
+/* ==================== НАВІГАЦІЯ ПО ПИТАННЯХ: Попереднє / Наступне / Завершити ==================== */
+.session-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+.session-controls .primary-btn,
+.session-controls .secondary-btn {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 140px;
+  margin-top: 0;
+}
+.session-controls button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+@media (max-width: 560px) {
+  .session-controls {
+    flex-direction: column;
+  }
+  .session-controls .primary-btn,
+  .session-controls .secondary-btn {
+    width: 100%;
+  }
+}
+
+/* ============================================================
+   BOLEST.AI — AUTH / SETUP SCREENS ADAPTER
+   Реальні класи в index.html (auth-container, auth-form,
+   auth-label, auth-input, auth-btn, auth-switch-row,
+   auth-switch-link, setup-container, setup-avatar-section...)
+   не мали власних стилів у файлі — звідси білі поля/кнопки
+   зі стандартним виглядом браузера. Приводимо їх до єдиної
+   темної теми з фіолетовим акцентом.
+   ============================================================ */
+
+.auth-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-logo {
+  font-size: 30px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  text-align: center;
+}
+.auth-logo span { color: var(--accent); }
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  margin-top: 18px;
+}
+
+.auth-label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 14px 0 6px;
+  text-align: left;
+}
+
+.auth-input {
+  width: 100%;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.auth-input:focus { border-color: var(--accent); }
+
+/* Забираємо жовту підсвітку автозаповнення браузера. */
+.auth-input:-webkit-autofill,
+.auth-input:-webkit-autofill:hover,
+.auth-input:-webkit-autofill:focus,
+.auth-input:autofill {
+  -webkit-text-fill-color: var(--text-main);
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg-panel-alt) inset;
+  box-shadow: 0 0 0px 1000px var(--bg-panel-alt) inset;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: var(--text-main);
+}
+
+.auth-btn {
+  width: 100%;
+  margin-top: 22px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.auth-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.auth-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.auth-switch-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 16px 0 0;
+}
+
+.auth-switch-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+.auth-switch-link:hover { color: var(--accent-hover); text-decoration: underline; }
+
+/* ---------- Екран налаштування профілю ---------- */
+.setup-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.setup-card { max-width: 420px; width: 100%; text-align: left; }
+.setup-card h2 { text-align: center; margin: 0 0 6px; font-size: 22px; }
+.setup-subtitle {
+  text-align: center;
+  color: var(--text-muted);
+  margin: 0 0 24px;
+  font-size: 13px;
+}
+
+.setup-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.setup-avatar-preview {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: var(--bg-panel-alt);
+  border: 2px dashed var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.setup-avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+#avatar-placeholder { font-size: 30px; color: var(--text-muted); }
+
+.setup-file-label {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.setup-file-label:hover { background: rgba(139, 92, 246, 0.28); }
+
+.setup-quote-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.setup-quote-row .auth-input { flex: 1; }
+.setup-quote-row .secondary-btn { flex-shrink: 0; }
+
+/* ============================================================
+   НАВЧАЛЬНА СЕСІЯ: двоколонковий макет
+   Зліва — панель-помічник (виглядає як чат, але це просто
+   кнопка "Дай підказку", без поля вводу). Справа — саме питання.
+   ============================================================ */
+.session-box-wide { max-width: 1100px; }
+
+.session-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.hint-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 240px;
+  position: sticky;
+  top: 20px;
+}
+
+.hint-panel-header {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-main);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.session-hints {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hint-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hint-message {
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-main);
+}
+
+.hint-message-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.hint-message-end {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.hint-btn { width: 100%; margin-top: auto; }
+
+.session-hint-images {
+  border-top: 1px solid var(--border-color);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.hint-images-btn { width: 100%; }
+
+.hint-images-gallery {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.hint-images-gallery a {
+  flex: 1 1 30%;
+  min-width: 80px;
+  display: block;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.hint-images-gallery img {
+  width: 100%;
+  aspect-ratio: 3 / 4; /* лист А4 */
+  object-fit: cover;
+  display: block;
+}
+
+@media (max-width: 860px) {
+  .session-layout {
+    grid-template-columns: 1fr;
+  }
+  .hint-panel {
+    position: static;
+    order: 2;
+  }
+  .session-card-main {
+    order: 1;
+  }
+}
+
+
+/* ==================== BOLEST.AI: НОВИЙ ВІЗУАЛ + АНАЛІТИКА ЧАСУ ==================== */
+body {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(139,92,246,.14), transparent 30%),
+    radial-gradient(circle at 90% 10%, rgba(74,222,128,.08), transparent 26%),
+    var(--bg-main);
+}
+
+.card,
+.auth-card,
+.setup-card,
+.level-block,
+.stats-block,
+.priorities-block,
+.main-nav,
+.content-center {
+  box-shadow: 0 12px 36px rgba(0,0,0,.18);
+}
+
+.primary-btn,
+.secondary-btn,
+.action-btn,
+.filter-btn,
+.session-option {
+  transition: transform .16s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+}
+
+.primary-btn:hover,
+.secondary-btn:hover,
+.action-btn:hover {
+  box-shadow: 0 8px 22px rgba(139,92,246,.18);
+}
+
+.primary-btn:hover,
+.action-btn:hover {
+  transform: translateY(-2px);
+}
+
+.top-timer-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.question-timer,
+.test-total-timer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: rgba(255,255,255,.05);
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.test-total-timer {
+  min-width: 82px;
+  color: var(--positive);
+  border-color: rgba(74,222,128,.35);
+}
+
+.test-total-timer.is-warning {
+  color: #ff4d61;
+  border-color: rgba(255,77,97,.5);
+  animation: timerPulse 1s infinite;
+}
+
+.test-embedded-timer {
+  display: none;
+}
+
+@keyframes timerPulse {
+  50% { opacity: .55; }
+}
+
+#screen-result {
+  align-items: flex-start;
+  overflow-y: auto;
+  padding: 32px 20px;
+}
+
+.result-shell {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+}
+
+.result-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.result-header h1 {
+  margin: 8px 0 6px;
+  font-size: 30px;
+}
+
+.result-header p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.result-mode-badge {
+  display: inline-flex;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(139,92,246,.45);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.result-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.result-stat-card {
+  background: linear-gradient(145deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.result-stat-card span,
+.result-stat-card small {
+  color: var(--text-muted);
+}
+
+.result-stat-card span {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.result-stat-card strong {
+  display: block;
+  font-size: 28px;
+  margin-bottom: 5px;
+}
+
+.result-stat-card small {
+  font-size: 12px;
+}
+
+.result-question-card {
+  padding: 22px;
+}
+
+.result-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.result-section-head h2 {
+  margin: 0 0 5px;
+  font-size: 19px;
+}
+
+.result-section-head p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.result-legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.legend-good { background: var(--positive); }
+.legend-slow { background: #ff4d61; }
+
+.result-questions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result-question-row {
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.result-q-meta,
+.result-q-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.result-q-meta strong {
+  font-size: 13px;
+}
+
+.result-q-topic {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.result-q-time {
+  font-size: 16px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-scale {
+  position: relative;
+  height: 14px;
+  margin: 11px 0 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.04);
+}
+
+.result-scale-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width .45s ease;
+}
+
+.result-scale-fill.good { background: var(--positive); }
+.result-scale-fill.slow { background: #ff4d61; }
+
+.result-scale-limit {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 9px;
+  font-weight: 800;
+  color: rgba(255,255,255,.65);
+}
+
+.result-q-status {
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.result-q-status.good { color: var(--positive); }
+.result-q-status.slow { color: #ff4d61; }
+
+.result-q-limit-note {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+@media (max-width: 760px) {
+  .result-summary-grid { grid-template-columns: 1fr; }
+  .result-header,
+  .result-section-head { flex-direction: column; }
+  .top-timer-wrap { gap: 6px; }
+  .question-timer, .test-total-timer { min-width: 56px; padding: 6px 8px; }
+}
