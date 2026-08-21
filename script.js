@@ -242,9 +242,10 @@ function renderAnalyticsChart() {
   const w = 640, h = 280, p = { top: 20, right: 20, bottom: 30, left: 44 };
   const plotW = w - p.left - p.right, plotH = h - p.top - p.bottom;
   const getX = i => p.left + (maxLen === 1 ? plotW / 2 : (i / (maxLen - 1)) * plotW);
-  const getY = score => p.top + plotH - ((score - 100) / 100) * plotH;
+  // Шкала графіка завжди повна: 0–200.
+  const getY = score => p.top + plotH - (Math.max(0, Math.min(200, Number(score) || 0)) / 200) * plotH;
 
-  [100, 150, 200].forEach(val => {
+  [0, 50, 100, 150, 200].forEach(val => {
     const y = getY(val);
     svg.insertAdjacentHTML("beforeend", `<line x1="${p.left}" y1="${y}" x2="${w - p.right}" y2="${y}" stroke="#2c2d34"/><text x="4" y="${y + 4}" font-size="11" fill="#9a9ba3">${val}</text>`);
   });
@@ -818,6 +819,18 @@ function renderCompletedAnalytics() {
     ? "Середнє лише за правильними відповідями"
     : "Час не показується: немає правильних відповідей";
   document.getElementById("result-total-time").textContent = data.timedQuestionsCount ? formatTime(data.totalTime) : "—";
+
+  const scoreEl = document.getElementById("result-nmt-score");
+  const rawEl = document.getElementById("result-raw-score-line");
+  if (scoreEl) {
+    scoreEl.textContent = data.mode === "test" && data.nmtScore != null ? `${data.nmtScore} / 200` : "—";
+  }
+  if (rawEl) {
+    rawEl.textContent = data.mode === "test" && data.rawScore != null
+      ? `Сирий бал: ${data.rawScore} / ${data.rawMax}`
+      : "Тільки для пробного тесту";
+  }
+
   const totalLimitEl = document.getElementById("result-total-limit");
   if (totalLimitEl) totalLimitEl.textContent = "";
 
@@ -1496,6 +1509,9 @@ async function finishTrialTest(autoFinished = false) {
   currentProfile = data;
   leaderboardCache = null;
   completedAnalytics = buildCompletedAnalytics("test", activeSubject);
+  completedAnalytics.nmtScore = score;
+  completedAnalytics.rawScore = raw;
+  completedAnalytics.rawMax = max;
 
   stopAllTimers();
   renderDashboard();

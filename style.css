@@ -3152,3 +3152,14 @@ body {
     gap: 10px;
   }
 }
+
+
+/* Результат пробного тесту: окрема картка бала НМТ. */
+.result-score-card strong {
+  font-size: 30px;
+  line-height: 1.1;
+}
+.result-score-card small {
+  display: block;
+  margin-top: 7px;
+}
