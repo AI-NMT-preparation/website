@@ -747,14 +747,10 @@ function renderSingleChoiceQuestion(q, container, mode, savedAnswer) {
     el.innerHTML = `<div class="session-option-letter">${letters[index]}</div><span>${escapeHtml(text)}</span>`;
     el.addEventListener("click", () => {
       // Дозволяємо переобирати відповідь будь-яку кількість разів до завершення сесії.
-      [...container.children].forEach(c => c.classList.remove("correct", "wrong"));
+      // Правильність не підсвічується кольором — лише позначаємо обраний варіант.
+      [...container.children].forEach(c => c.classList.remove("selected"));
+      el.classList.add("selected");
       const correct = isSingleChoiceCorrect(q, index, text);
-      el.classList.add(correct ? "correct" : "wrong");
-      if (!correct) {
-        const c = getQuestionCorrect(q);
-        const ci = c.index != null ? Number(c.index) : ["a","b","c","d"].indexOf(normalizeLetter(c.option));
-        if (ci >= 0 && container.children[ci]) container.children[ci].classList.add("correct");
-      }
       recordAnswer(mode, { type: "single", selectedIndex: index, correct });
     });
     container.appendChild(el);
@@ -762,12 +758,7 @@ function renderSingleChoiceQuestion(q, container, mode, savedAnswer) {
 
   if (savedAnswer && savedAnswer.type === "single") {
     const selEl = container.children[savedAnswer.selectedIndex];
-    if (selEl) selEl.classList.add(savedAnswer.correct ? "correct" : "wrong");
-    if (!savedAnswer.correct) {
-      const c = getQuestionCorrect(q);
-      const ci = c.index != null ? Number(c.index) : ["a","b","c","d"].indexOf(normalizeLetter(c.option));
-      if (ci >= 0 && container.children[ci]) container.children[ci].classList.add("correct");
-    }
+    if (selEl) selEl.classList.add("selected");
   }
 }
 
