@@ -335,6 +335,7 @@ let hintState = []; // скільки підказок вже відкрито �
 let sessionTopicCounts = {};
 let questionStartedAt = null;
 let questionElapsedMs = [];
+let questionFinalized = []; // true only after an answer exists AND the user clicks "Next"
 let questionTimerInterval = null;
 let testStartedAt = null;
 let testRemainingMs = 60 * 60 * 1000;
@@ -377,31 +378,113 @@ function parseJson(value, fallback) {
   try { return JSON.parse(value); } catch { return fallback; }
 }
 
+function normalizeQuestionType(value) {
+  const raw = String(value ?? '').trim().toLowerCase();
+  const aliases = {
+    single: 'single_choice',
+    choice: 'single_choice',
+    singlechoice: 'single_choice',
+    single_choice: 'single_choice',
+    matching: 'matching',
+    correspondence: 'matching',
+    matching_question: 'matching',
+    відповідність: 'matching',
+    short: 'short_answer',
+    short_answer: 'short_answer',
+    free_text: 'short_answer',
+    text_answer: 'short_answer',
+    own_answer: 'short_answer',
+    user_answer: 'short_answer',
+    input: 'short_answer',
+    multiple: 'multiple_choice',
+    multiple_choice: 'multiple_choice',
+    multi_choice: 'multiple_choice',
+    table: 'table'
+  };
+  return aliases[raw] || 'single_choice';
+}
+
+function normalizeOptionToken(value) {
+  if (value == null) return '';
+  const s = String(value).trim().toLowerCase();
+  const map = { a:'a', b:'b', c:'c', d:'d', e:'e', а:'a', б:'b', в:'c', г:'d', ґ:'e' };
+  if (map[s]) return map[s];
+  const optionMatch = s.match(/^option[_\s-]?([a-e])$/i);
+  if (optionMatch) return optionMatch[1].toLowerCase();
+  if (/^[1-5]$/.test(s)) return ['a','b','c','d','e'][Number(s) - 1];
+  return s;
+}
+
 function normalizeCorrect(value) {
   if (value == null) return null;
-  if (typeof value === "object") return value;
+  if (typeof value === 'object') return value;
   const s = String(value).trim();
-  // Формат "option_a" / "option_b" / "option_c" / "option_d" (саме так у твоїй таблиці right_answer)
-  const optionMatch = s.match(/^option[_\s-]?([a-dA-D])$/);
-  if (optionMatch) return { option: optionMatch[1].toLowerCase() };
-  if (/^[a-d]$/i.test(s)) return { option: s.toLowerCase() };
-  if (/^[а-г]$/iu.test(s)) return { option: s.toUpperCase() };
+  const option = normalizeOptionToken(s);
+  if (['a','b','c','d','e'].includes(option)) return { option };
   return { value: s };
 }
 
+function readIndexedColumns(row, prefix, max = 10) {
+  const result = [];
+  for (let i = 1; i <= max; i++) {
+    const value = row[`${prefix}_${i}`];
+    if (value != null && String(value).trim() !== '') {
+      result.push({ index: i, value });
+    }
+  }
+  return result;
+}
+
+function buildMatchingData(row, options) {
+  const leftColumns = readIndexedColumns(row, 'subquestion', 10);
+  const answerColumns = readIndexedColumns(row, 'right_answer', 10);
+
+  // Primary format: subquestion_1..N + option_a..e + right_answer_1..N.
+  if (leftColumns.length) {
+    const left = leftColumns.map(({ index, value }) => ({ id: index, label: String(value) }));
+    const right = options.map((text, i) => ({ id: String.fromCharCode(65 + i), label: String(text) }));
+    const correct = {};
+    answerColumns.forEach(({ index, value }) => {
+      const token = normalizeOptionToken(value);
+      if (token) correct[String(index)] = token;
+    });
+    return { left, right, correct };
+  }
+
+  // Backward compatibility with the previous JSON-based matching format.
+  const legacyLeft = parseJson(row.matching_left, []);
+  const legacyRight = parseJson(row.matching_right, []);
+  let legacyCorrect = parseJson(row.correct_answer, null);
+  if (!legacyCorrect || (typeof legacyCorrect === 'object' && Object.keys(legacyCorrect).length === 0)) {
+    legacyCorrect = {};
+  }
+  return {
+    left: Array.isArray(legacyLeft) ? legacyLeft : [],
+    right: Array.isArray(legacyRight) ? legacyRight : [],
+    correct: legacyCorrect
+  };
+}
+
 function normalizeQuestion(row, subject, topicKey) {
-  const type = row.question_type || "single_choice";
+  const type = normalizeQuestionType(row.question_type);
+
   let options = parseJson(row.options, []);
   if (!Array.isArray(options) || options.length === 0) {
-    options = [row.option_a, row.option_b, row.option_c, row.option_d].filter(v => v != null && String(v).trim() !== "");
+    options = [row.option_a, row.option_b, row.option_c, row.option_d, row.option_e]
+      .filter(v => v != null && String(v).trim() !== '');
   }
 
   let correct = parseJson(row.correct_answer, null);
-  if (!correct || (typeof correct === "object" && Object.keys(correct).length === 0)) {
+  if (!correct || (typeof correct === 'object' && Object.keys(correct).length === 0)) {
     correct = normalizeCorrect(row.right_answer);
   }
   if (!correct && row.correct_option != null) correct = normalizeCorrect(row.correct_option);
   if (!correct && row.correct_index != null) correct = { index: Number(row.correct_index) };
+
+  const matching = buildMatchingData(row, options);
+  if (type === 'matching' && matching.left.length && matching.right.length) {
+    correct = matching.correct;
+  }
 
   return {
     id: row.id,
@@ -409,18 +492,18 @@ function normalizeQuestion(row, subject, topicKey) {
     subject,
     topic: row.topic || topicKey,
     question_type: type,
-    question_text: row.question_text || row.question || "",
+    question_text: row.question_text || row.question || '',
     image_path: row.image_path || null,
     options,
     correct_answer: correct || {},
-    matching_left: parseJson(row.matching_left, []),
-    matching_right: parseJson(row.matching_right, []),
+    matching_left: matching.left,
+    matching_right: matching.right,
     table_data: parseJson(row.table_data, null),
     hint1: row.hint1 || null,
     hint2: row.hint2 || null,
     hint3: row.hint3 || null,
     weight: row.weight != null && Number(row.weight) > 0 ? Number(row.weight) : 1,
-    solutionImages: [row.hint_image_1, row.hint_image_2, row.hint_image_3].filter(v => v != null && String(v).trim() !== ""),
+    solutionImages: [row.hint_image_1, row.hint_image_2, row.hint_image_3].filter(v => v != null && String(v).trim() !== ''),
     explanation: row.explanation || null
   };
 }
@@ -567,17 +650,21 @@ function getRecommendedSeconds(subject, questionNumber, question = null) {
 
   if (subject === "ukrainian") {
     if (is("matching", "correspondence", "matching_question")) return 120;
+    if (is("short_answer", "short", "open", "open_answer")) return 90; // розширення для власної відповіді
+    if (is("multiple_choice", "multi_choice", "multiple")) return 90;
     return 45; // середина рекомендованого діапазону 35–50 с
   }
 
   if (subject === "math") {
     if (is("matching", "correspondence", "matching_question")) return 180;
     if (is("short_answer", "short", "open", "open_answer")) return 330; // середина 5–6 хв
+    if (is("multiple_choice", "multi_choice", "multiple")) return 120;
     return 120;
   }
 
   if (subject === "history") {
     if (is("matching", "correspondence", "matching_question")) return 120;
+    if (is("short_answer", "short", "open", "open_answer")) return 120; // розширення для власної відповіді
     if (is("sequence", "ordering", "order", "multiple_choice", "multi_choice", "multiple", "table")) return 150;
     return 48; // середина рекомендованого діапазону 45–50 с
   }
@@ -598,10 +685,12 @@ function renderCurrentQuestionTimer() {
 function startQuestionTimer() {
   stopQuestionTimer();
 
-  // После перехода на следующий вопрос таймер правильного/любого
-  // уже отвеченного вопроса остаётся замороженным. Неотвеченный
-  // вопрос при возврате снова запускает отсчёт с накопленного времени.
-  if (questionAnswers[currentQuestionIndex]) {
+  // Вопрос замораживается только после выполнения ОБОИХ условий:
+  // 1) есть ответ;
+  // 2) пользователь нажал «Наступне питання».
+  // Если ответ был введён/проверен, но пользователь вернулся к вопросу до
+  // перехода вперёд, таймер продолжает идти.
+  if (questionFinalized[currentQuestionIndex] === true) {
     questionStartedAt = null;
     renderCurrentQuestionTimer();
     return;
@@ -842,6 +931,7 @@ function openSessionSetup() {
     questionAnswers = new Array(questions.length).fill(null);
     hintState = new Array(questions.length).fill(0);
     questionElapsedMs = new Array(questions.length).fill(0);
+    questionFinalized = new Array(questions.length).fill(false);
     completedAnalytics = null;
     closeModal();
     showScreen("screen-session");
@@ -885,6 +975,7 @@ function openTrialTestSetup() {
     activeQuestionResults = [];
     questionAnswers = new Array(questions.length).fill(null);
     questionElapsedMs = new Array(questions.length).fill(0);
+    questionFinalized = new Array(questions.length).fill(false);
     completedAnalytics = null;
     setTimeout(() => {
       closeModal();
@@ -910,8 +1001,9 @@ function normalizeLetter(v) {
 function isSingleChoiceCorrect(q, index, value) {
   const c = getQuestionCorrect(q);
   if (c.index != null) return Number(c.index) === index;
-  const target = normalizeLetter(c.option ?? c.value);
-  if (["a", "b", "c", "d"].includes(target)) return target === ["a", "b", "c", "d"][index];
+  const target = normalizeOptionToken(c.option ?? c.value);
+  const letters = ["a", "b", "c", "d", "e"];
+  if (letters.includes(target)) return target === letters[index];
   if (target !== "" && value != null) return String(value).trim() === String(c.value ?? target).trim();
   return false;
 }
@@ -985,9 +1077,10 @@ function renderQuestion(mode) {
 
   const savedAnswer = questionAnswers[currentQuestionIndex];
 
-  if (q.question_type === "matching") renderMatchingQuestion(q, options, mode, savedAnswer);
-  else if (q.question_type === "short_answer") renderShortAnswerQuestion(q, options, mode, savedAnswer);
-  else if (q.question_type === "table") renderTableQuestion(q, options, mode, savedAnswer);
+  if (q.question_type === 'matching') renderMatchingQuestion(q, options, mode, savedAnswer);
+  else if (q.question_type === 'short_answer') renderShortAnswerQuestion(q, options, mode, savedAnswer);
+  else if (q.question_type === 'multiple_choice') renderMultipleChoiceQuestion(q, options, mode, savedAnswer);
+  else if (q.question_type === 'table') renderTableQuestion(q, options, mode, savedAnswer);
   else renderSingleChoiceQuestion(q, options, mode, savedAnswer);
 
   const prevBtn = document.getElementById(`${prefix}-prev-btn`);
@@ -1031,6 +1124,57 @@ function renderSingleChoiceQuestion(q, container, mode, savedAnswer) {
   }
 }
 
+function renderMultipleChoiceQuestion(q, container, mode, savedAnswer) {
+  const letters = ['A', 'B', 'C', 'D', 'E'];
+  const saved = savedAnswer && savedAnswer.type === 'multiple' ? (savedAnswer.selectedIndices || []) : [];
+  container.innerHTML = '';
+
+  q.options.forEach((text, index) => {
+    if (text == null || String(text).trim() === '') return;
+    const el = document.createElement('div');
+    el.className = 'session-option';
+    el.innerHTML = `<div class="session-option-letter">${letters[index]}</div><span>${escapeHtml(text)}</span>`;
+    if (saved.includes(index)) el.classList.add('selected');
+    el.addEventListener('click', () => {
+      el.classList.toggle('selected');
+    });
+    container.appendChild(el);
+  });
+
+  const checkBtn = document.createElement('button');
+  checkBtn.id = 'multiple-answer-btn';
+  checkBtn.className = 'primary-btn';
+  checkBtn.type = 'button';
+  checkBtn.textContent = 'Перевірити';
+  const resultEl = document.createElement('div');
+  resultEl.id = 'multiple-answer-result';
+  container.appendChild(checkBtn);
+  container.appendChild(resultEl);
+
+  if (savedAnswer && savedAnswer.type === 'multiple') {
+    resultEl.textContent = savedAnswer.correct ? 'Правильно' : 'Неправильно';
+  }
+
+  checkBtn.addEventListener('click', () => {
+    const selectedIndices = [...container.querySelectorAll('.session-option')]
+      .map((el, i) => el.classList.contains('selected') ? i : -1)
+      .filter(i => i >= 0);
+    const selectedTokens = selectedIndices.map(i => letters[i].toLowerCase());
+    const rawCorrect = getQuestionCorrect(q);
+    let expectedTokens = [];
+    if (Array.isArray(rawCorrect)) expectedTokens = rawCorrect.map(normalizeOptionToken).filter(Boolean);
+    else if (rawCorrect && Array.isArray(rawCorrect.options)) expectedTokens = rawCorrect.options.map(normalizeOptionToken).filter(Boolean);
+    else if (rawCorrect?.value != null) expectedTokens = String(rawCorrect.value).split(/[,;\s]+/).map(normalizeOptionToken).filter(Boolean);
+    else if (rawCorrect?.option != null) expectedTokens = [normalizeOptionToken(rawCorrect.option)];
+
+    expectedTokens = [...new Set(expectedTokens)].sort();
+    const actualTokens = [...new Set(selectedTokens)].sort();
+    const correct = JSON.stringify(actualTokens) === JSON.stringify(expectedTokens);
+    resultEl.textContent = correct ? 'Правильно' : 'Неправильно';
+    recordAnswer(mode, { type: 'multiple', selectedIndices, correct, expected: expectedTokens });
+  });
+}
+
 function renderShortAnswerQuestion(q, container, mode, savedAnswer) {
   container.innerHTML = `<div class="short-answer-wrap"><input id="short-answer-input" class="auth-input" type="text" placeholder="Введіть відповідь"><button id="short-answer-btn" class="primary-btn" type="button">Перевірити</button><div id="short-answer-result"></div></div>`;
   const input = document.getElementById("short-answer-input");
@@ -1056,7 +1200,7 @@ function renderMatchingQuestion(q, container, mode, savedAnswer) {
   const right = Array.isArray(q.matching_right) ? q.matching_right : [];
   const correct = getQuestionCorrect(q);
   if (!left.length || !right.length) {
-    container.innerHTML = "<p>Для завдання на відповідність не заповнені matching_left / matching_right.</p>";
+    container.innerHTML = "<p>Для завдання на відповідність не знайдені subquestion_1..N або option_a..option_e.</p>";
     return;
   }
   container.innerHTML = left.map((item, i) => {
@@ -1122,6 +1266,7 @@ function advanceQuestion(mode) {
   // 1) есть выбранный/проверенный ответ;
   // 2) пользователь нажал «Следующее».
   captureCurrentQuestionElapsed();
+  questionFinalized[currentQuestionIndex] = !!questionAnswers[currentQuestionIndex];
   currentQuestionIndex++;
   renderQuestion(mode);
 }
@@ -1203,6 +1348,7 @@ async function finishLearningSession() {
 
   /* Времена активной сессії більше не зберігаємо. */
   questionElapsedMs = [];
+  questionFinalized = [];
   questionStartedAt = null;
 }
 
@@ -1271,6 +1417,7 @@ async function finishTrialTest(autoFinished = false) {
   renderCompletedAnalytics();
 
   questionElapsedMs = [];
+  questionFinalized = [];
   questionStartedAt = null;
 }
 
