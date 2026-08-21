@@ -3163,3 +3163,40 @@ body {
   display: block;
   margin-top: 7px;
 }
+
+/* ============================================================
+   BOLEST.AI — МОБІЛЬНА АДАПТАЦІЯ ГРАФІКА АНАЛІТИКИ
+   SVG графік повинен повністю вміщатися на вузькому екрані,
+   без горизонтального обрізання або прокручування сторінки.
+   ============================================================ */
+@media (max-width: 820px) {
+  #view-analytics .chart-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  #view-analytics #analytics-chart {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    aspect-ratio: 640 / 280 !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 560px) {
+  #view-analytics .chart-container {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  #view-analytics #analytics-chart {
+    width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 640 / 280 !important;
+  }
+}
