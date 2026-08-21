@@ -229,7 +229,7 @@
 
   <!-- ЕКРАН 4: НАВЧАЛЬНА СЕСІЯ -->
   <div id="screen-session" class="screen">
-    <div class="session-box">
+    <div class="session-box session-box-wide">
       <div class="session-top-bar">
         <button id="session-exit-btn" class="secondary-btn">Вийти</button>
         <div class="session-progress-bar-container">
@@ -239,16 +239,23 @@
         <span id="session-topic-label" class="session-topic-badge">Тема</span>
       </div>
 
-      <div class="card session-card-main">
-        <p id="session-question-text" class="session-q-text">Завантаження питання...</p>
-        <div id="session-image"></div>
-        <div id="session-options" class="session-options-list"></div>
-        <div id="session-hints" class="session-hints"></div>
-        
-        <div class="session-controls">
-          <button id="session-prev-btn" class="secondary-btn" type="button">Попереднє питання</button>
-          <button id="session-next-btn" class="primary-btn" type="button">Наступне питання</button>
-          <button id="session-finish-btn" class="primary-btn" type="button">Завершити сесію</button>
+      <div class="session-layout">
+        <aside class="card hint-panel">
+          <div class="hint-panel-header">Помічник</div>
+          <div id="session-hints" class="session-hints"></div>
+          <div id="session-hint-images" class="session-hint-images"></div>
+        </aside>
+
+        <div class="card session-card-main">
+          <p id="session-question-text" class="session-q-text">Завантаження питання...</p>
+          <div id="session-image"></div>
+          <div id="session-options" class="session-options-list"></div>
+
+          <div class="session-controls">
+            <button id="session-prev-btn" class="secondary-btn" type="button">Попереднє питання</button>
+            <button id="session-next-btn" class="primary-btn" type="button">Наступне питання</button>
+            <button id="session-finish-btn" class="primary-btn" type="button">Завершити сесію</button>
+          </div>
         </div>
       </div>
     </div>

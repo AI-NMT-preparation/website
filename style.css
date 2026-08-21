@@ -2536,3 +2536,117 @@ html, body {
 }
 .setup-quote-row .auth-input { flex: 1; }
 .setup-quote-row .secondary-btn { flex-shrink: 0; }
+
+/* ============================================================
+   НАВЧАЛЬНА СЕСІЯ: двоколонковий макет
+   Зліва — панель-помічник (виглядає як чат, але це просто
+   кнопка "Дай підказку", без поля вводу). Справа — саме питання.
+   ============================================================ */
+.session-box-wide { max-width: 1100px; }
+
+.session-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.hint-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 240px;
+  position: sticky;
+  top: 20px;
+}
+
+.hint-panel-header {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-main);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.session-hints {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hint-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hint-message {
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-main);
+}
+
+.hint-message-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.hint-message-end {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.hint-btn { width: 100%; margin-top: auto; }
+
+.session-hint-images {
+  border-top: 1px solid var(--border-color);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.hint-images-btn { width: 100%; }
+
+.hint-images-gallery {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.hint-images-gallery a {
+  flex: 1 1 30%;
+  min-width: 80px;
+  display: block;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.hint-images-gallery img {
+  width: 100%;
+  aspect-ratio: 3 / 4; /* лист А4 */
+  object-fit: cover;
+  display: block;
+}
+
+@media (max-width: 860px) {
+  .session-layout {
+    grid-template-columns: 1fr;
+  }
+  .hint-panel {
+    position: static;
+    order: 2;
+  }
+  .session-card-main {
+    order: 1;
+  }
+}

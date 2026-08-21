@@ -329,6 +329,7 @@ let activeSubject = "";
 let activeMode = "session";
 let activeQuestionResults = [];
 let questionAnswers = []; // збережений вибір користувача по кожному питанню (можна змінювати до завершення сесії)
+let hintState = []; // скільки підказок вже відкрито по кожному питанню (session mode)
 let sessionTopicCounts = {};
 
 const NMT_COUNTS = { math: 22, ukrainian: 30, history: 30 };
@@ -371,8 +372,11 @@ function normalizeCorrect(value) {
   if (value == null) return null;
   if (typeof value === "object") return value;
   const s = String(value).trim();
+  // Формат "option_a" / "option_b" / "option_c" / "option_d" (саме так у твоїй таблиці right_answer)
+  const optionMatch = s.match(/^option[_\s-]?([a-dA-D])$/);
+  if (optionMatch) return { option: optionMatch[1].toLowerCase() };
   if (/^[a-d]$/i.test(s)) return { option: s.toLowerCase() };
-  if (/^[а-я]$/iu.test(s)) return { option: s.toUpperCase() };
+  if (/^[а-г]$/iu.test(s)) return { option: s.toUpperCase() };
   return { value: s };
 }
 
@@ -404,6 +408,9 @@ function normalizeQuestion(row, subject, topicKey) {
     table_data: parseJson(row.table_data, null),
     hint1: row.hint1 || null,
     hint2: row.hint2 || null,
+    hint3: row.hint3 || null,
+    weight: row.weight != null && Number(row.weight) > 0 ? Number(row.weight) : 1,
+    solutionImages: [row.hint_image_1, row.hint_image_2, row.hint_image_3].filter(v => v != null && String(v).trim() !== ""),
     explanation: row.explanation || null
   };
 }
@@ -570,6 +577,7 @@ function openSessionSetup() {
     correctAnswersCount = 0;
     activeQuestionResults = [];
     questionAnswers = new Array(questions.length).fill(null);
+    hintState = new Array(questions.length).fill(0);
     closeModal();
     showScreen("screen-session");
     renderQuestion("session");
@@ -659,17 +667,50 @@ function renderQuestion(mode) {
   if (mode === "session") {
     const hints = document.getElementById("session-hints");
     hints.innerHTML = "";
-    if (q.hint1 || q.hint2) {
-      hints.innerHTML = `<button type="button" class="secondary-btn hint-btn" id="hint-btn">Дай підказку</button><div id="hint-text" class="hint-text"></div>`;
-      let used = 0;
-      document.getElementById("hint-btn").addEventListener("click", () => {
-        const text = used === 0 ? q.hint1 : q.hint2;
-        if (!text) { document.getElementById("hint-btn").disabled = true; return; }
-        document.getElementById("hint-text").textContent = text;
-        renderMathIn(document.getElementById("hint-text"));
-        used++;
-        if (used >= 2 || (used === 1 && !q.hint2)) document.getElementById("hint-btn").disabled = true;
+    const hintTexts = [q.hint1, q.hint2, q.hint3].filter(t => t != null && String(t).trim() !== "");
+
+    if (hintTexts.length) {
+      hints.innerHTML = `<div id="hint-messages" class="hint-messages"></div><button type="button" class="secondary-btn hint-btn" id="hint-btn">Дай підказку</button>`;
+      const messagesEl = document.getElementById("hint-messages");
+      const btn = document.getElementById("hint-btn");
+
+      const renderRevealedHints = () => {
+        const used = hintState[currentQuestionIndex] || 0;
+        messagesEl.innerHTML = hintTexts.slice(0, used).map((t, i) =>
+          `<div class="hint-message"><span class="hint-message-label">Підказка ${i + 1}</span>${escapeHtml(t)}</div>`
+        ).join("");
+        if (used >= hintTexts.length) {
+          messagesEl.innerHTML += `<div class="hint-message hint-message-end">Підказки закінчились — думай сам 🙂</div>`;
+          btn.disabled = true;
+        }
+        renderMathIn(messagesEl);
+      };
+
+      btn.addEventListener("click", () => {
+        hintState[currentQuestionIndex] = (hintState[currentQuestionIndex] || 0) + 1;
+        renderRevealedHints();
       });
+      renderRevealedHints();
+    } else {
+      hints.innerHTML = `<div class="hint-messages"><div class="hint-message hint-message-end">Підказок для цього питання ще немає — думай сам 🙂</div></div><button type="button" class="secondary-btn hint-btn" disabled>Дай підказку</button>`;
+    }
+
+    // Для математики: якщо для питання завантажені фото розв'язання — окрема кнопка-галерея.
+    const imagesHost = document.getElementById("session-hint-images");
+    if (imagesHost) {
+      imagesHost.innerHTML = "";
+      if (activeSubject === "math" && q.solutionImages && q.solutionImages.length) {
+        imagesHost.innerHTML = `<button type="button" class="secondary-btn hint-images-btn" id="hint-images-btn">Показати розв'язання (фото)</button><div id="hint-images-gallery" class="hint-images-gallery" style="display:none;"></div>`;
+        document.getElementById("hint-images-btn").addEventListener("click", () => {
+          const gallery = document.getElementById("hint-images-gallery");
+          const showing = gallery.style.display !== "none";
+          if (showing) { gallery.style.display = "none"; return; }
+          gallery.innerHTML = q.solutionImages.map((src, i) =>
+            `<a href="${escapeHtml(src)}" target="_blank" rel="noopener"><img src="${escapeHtml(src)}" alt="Розв'язання, крок ${i + 1}"></a>`
+          ).join("");
+          gallery.style.display = "flex";
+        });
+      }
     }
   }
 
@@ -833,6 +874,29 @@ function tallyResults() {
   return correct;
 }
 
+/* Тестові бали для пробного тесту: кожне звичайне питання дає стільки
+   балів, скільки вказано у його weight (за замовчуванням 1) — якщо
+   відповідь правильна. Завдання на відповідність не працюють за
+   принципом "все або нічого": кожна правильно поставлена пара окремо
+   додає +1 тестовий бал. */
+function tallyRawScore() {
+  let raw = 0;
+  let max = 0;
+  activeQuestions.forEach((q, i) => {
+    const a = questionAnswers[i];
+    if (q.question_type === "matching") {
+      const pairsTotal = Array.isArray(q.matching_left) ? q.matching_left.length : (a && a.total) || 0;
+      max += pairsTotal;
+      if (a && a.type === "matching") raw += a.correctCount || 0;
+    } else {
+      const weight = q.weight || 1;
+      max += weight;
+      if (a && a.correct) raw += weight;
+    }
+  });
+  return { raw, max };
+}
+
 async function finishLearningSession() {
   correctAnswersCount = tallyResults();
   const expGained = correctAnswersCount * 10;
@@ -859,17 +923,52 @@ async function finishLearningSession() {
   showScreen("screen-dashboard");
 }
 
-function estimateTrialScore(subject, correct, total) {
-  // Результат для профілю/графіка зберігаємо у звичній шкалі 100–200.
-  // Це пропорційний орієнтир; офіційну таблицю переведення можна підключити окремо.
-  return total ? Math.round(100 + (correct / total) * 100) : 100;
+/* Офіційні таблиці переведення тестового бала НМТ 2026 у шкалу 100–200
+   (Освіта.UA, за Порядком прийому на навчання 2026 року). */
+const NMT_SCORE_TABLES = {
+  math: [
+    [5, 100], [6, 108], [7, 115], [8, 123], [9, 131], [10, 134], [11, 137], [12, 140],
+    [13, 143], [14, 145], [15, 147], [16, 148], [17, 149], [18, 150], [19, 151], [20, 152],
+    [21, 155], [22, 159], [23, 163], [24, 167], [25, 170], [26, 173], [27, 176], [28, 180],
+    [29, 184], [30, 189], [31, 194], [32, 200]
+  ],
+  ukrainian: [
+    [8, 100], [9, 105], [10, 110], [11, 120], [12, 125], [13, 130], [14, 134], [15, 136],
+    [16, 138], [17, 140], [18, 142], [19, 143], [20, 144], [21, 145], [22, 146], [23, 148],
+    [24, 149], [25, 150], [26, 152], [27, 154], [28, 156], [29, 157], [30, 159], [31, 160],
+    [32, 162], [33, 163], [34, 165], [35, 167], [36, 170], [37, 172], [38, 175], [39, 177],
+    [40, 180], [41, 183], [42, 186], [43, 191], [44, 195], [45, 200]
+  ],
+  history: [
+    [9, 100], [10, 105], [11, 110], [12, 115], [13, 120], [14, 125], [15, 130], [16, 132],
+    [17, 134], [18, 136], [19, 138], [20, 140], [21, 141], [22, 142], [23, 143], [24, 144],
+    [25, 145], [26, 146], [27, 147], [28, 148], [29, 149], [30, 150], [31, 151], [32, 152],
+    [33, 154], [34, 156], [35, 158], [36, 160], [37, 163], [38, 166], [39, 168], [40, 169],
+    [41, 170], [42, 172], [43, 173], [44, 175], [45, 177], [46, 179], [47, 181], [48, 183],
+    [49, 185], [50, 188], [51, 191], [52, 194], [53, 197], [54, 200]
+  ]
+};
+
+/* Знаходить рейтинговий бал за офіційною таблицею для сирого тестового
+   бала. Якщо сирий бал нижчий за поріг — тест не зарахований (null).
+   Якщо вищий за максимум таблиці — прирівнюється до 200. */
+function lookupNmtScore(subject, raw) {
+  const table = NMT_SCORE_TABLES[subject];
+  if (!table) return null;
+  if (raw < table[0][0]) return null;
+  let result = table[0][1];
+  for (const [threshold, score] of table) {
+    if (raw >= threshold) result = score; else break;
+  }
+  return result;
 }
 
 async function finishTrialTest() {
   correctAnswersCount = tallyResults();
-  const score = estimateTrialScore(activeSubject, correctAnswersCount, activeQuestions.length);
+  const { raw, max } = tallyRawScore();
+  const score = lookupNmtScore(activeSubject, raw);
   const history = Array.isArray(currentProfile[`${activeSubject}_history`]) ? [...currentProfile[`${activeSubject}_history`]] : [];
-  history.push(score);
+  history.push(score ?? 0);
   const { data, error } = await supabaseClient.from("profiles").update({
     [`${activeSubject}_history`]: history,
     [`${activeSubject}_score`]: score
@@ -878,7 +977,8 @@ async function finishTrialTest() {
   currentProfile = data;
   leaderboardCache = null;
   renderDashboard();
-  alert(`Пробний тест завершено! Правильних відповідей: ${correctAnswersCount} з ${activeQuestions.length}. Результат: ${score}/200.`);
+  const scoreLine = score != null ? `Результат: ${score}/200 (${raw} з ${max} тестових балів).` : `Поки що нижче порогу проходження (${raw} з ${max} тестових балів) — рейтинговий бал не нараховується.`;
+  alert(`Пробний тест завершено! Правильних відповідей: ${correctAnswersCount} з ${activeQuestions.length}. ${scoreLine}`);
   showScreen("screen-dashboard");
 }
 
