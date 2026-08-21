@@ -3054,3 +3054,101 @@ body {
 @media (max-width:560px) {
   .matching-row { grid-template-columns:1fr; }
 }
+
+/* Matching: кастомний список, щоб LaTeX працював і всередині варіантів відповіді. */
+.matching-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  gap: 18px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.matching-subquestion {
+  min-width: 0;
+  line-height: 1.5;
+}
+
+.matching-choice {
+  position: relative;
+  width: 100%;
+}
+
+.matching-choice-trigger {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 10px;
+  background: rgba(255,255,255,.045);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.matching-choice-trigger:hover,
+.matching-choice.open .matching-choice-trigger {
+  border-color: rgba(139,92,246,.85);
+  background: rgba(139,92,246,.10);
+}
+
+.matching-choice-value {
+  flex: 1;
+  min-width: 0;
+}
+
+.matching-choice-arrow {
+  opacity: .7;
+  flex: 0 0 auto;
+}
+
+.matching-choice-menu {
+  position: absolute;
+  z-index: 100;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  display: none;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 10px;
+  background: #191820;
+  box-shadow: 0 16px 40px rgba(0,0,0,.45);
+}
+
+.matching-choice.open .matching-choice-menu {
+  display: block;
+}
+
+.matching-choice-option {
+  width: 100%;
+  display: block;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.matching-choice-option:hover,
+.matching-choice-option.selected {
+  background: rgba(139,92,246,.18);
+}
+
+@media (max-width: 760px) {
+  .matching-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}

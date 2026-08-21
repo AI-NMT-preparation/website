@@ -442,11 +442,21 @@ function buildMatchingData(row, options) {
   // Primary format: subquestion_1..N + option_a..e + right_answer_1..N.
   if (leftColumns.length) {
     const left = leftColumns.map(({ index, value }) => ({ id: index, label: String(value) }));
-    const right = options.map((text, i) => ({ id: String.fromCharCode(65 + i), label: String(text) }));
+
+    // Для matching значення відповіді в БД — option_a / option_b / ... .
+    // Тому саме ці токени використовуємо як value, а не A/B/C/D.
+    const letters = ["a", "b", "c", "d", "e"];
+    const right = options.map((text, i) => ({
+      id: `option_${letters[i]}`,
+      label: String(text)
+    }));
+
     const correct = {};
     answerColumns.forEach(({ index, value }) => {
       const token = normalizeOptionToken(value);
-      if (token) correct[String(index)] = token;
+      if (token && letters.includes(token)) {
+        correct[String(index)] = `option_${token}`;
+      }
     });
     return { left, right, correct };
   }
@@ -1101,7 +1111,7 @@ function recordAnswer(mode, data) {
 }
 
 function renderSingleChoiceQuestion(q, container, mode, savedAnswer) {
-  const letters = ["A", "B", "C", "D"];
+  const letters = ["A", "B", "C", "D", "E"];
   q.options.forEach((text, index) => {
     if (text == null || String(text).trim() === "") return;
     const el = document.createElement("div");
@@ -1195,42 +1205,117 @@ function renderShortAnswerQuestion(q, container, mode, savedAnswer) {
   });
 }
 
+function normalizeMatchingChoice(value) {
+  const raw = String(value ?? "").trim().toLowerCase();
+  if (!raw) return "";
+  if (/^option_[a-e]$/.test(raw)) return raw;
+  const token = normalizeOptionToken(raw);
+  return ["a", "b", "c", "d", "e"].includes(token) ? `option_${token}` : raw;
+}
+
 function renderMatchingQuestion(q, container, mode, savedAnswer) {
   const left = Array.isArray(q.matching_left) ? q.matching_left : [];
   const right = Array.isArray(q.matching_right) ? q.matching_right : [];
   const correct = getQuestionCorrect(q);
+
   if (!left.length || !right.length) {
     container.innerHTML = "<p>Для завдання на відповідність не знайдені subquestion_1..N або option_a..option_e.</p>";
     return;
   }
+
+  const savedSelections = savedAnswer?.type === "matching" ? (savedAnswer.selections || {}) : {};
+  const optionLabel = (item) => String(typeof item === "object" ? (item.label ?? item.text ?? item.id ?? "") : item);
+  const optionId = (item, index) => normalizeMatchingChoice(typeof item === "object" ? item.id : item) || `option_${["a", "b", "c", "d", "e"][index]}`;
+
   container.innerHTML = left.map((item, i) => {
-    const id = typeof item === "object" ? (item.id ?? i + 1) : i + 1;
+    const id = String(typeof item === "object" ? (item.id ?? i + 1) : i + 1);
     const label = typeof item === "object" ? (item.label ?? item.text ?? id) : item;
-    return `<div class="matching-row"><span>${escapeHtml(label)}</span><select class="matching-select" data-id="${escapeHtml(id)}"><option value="">—</option>${right.map((r,j)=>{ const rid=typeof r==='object'?(r.id??String.fromCharCode(65+j)):String.fromCharCode(65+j); const rl=typeof r==='object'?(r.label??r.text??rid):r; return `<option value="${escapeHtml(rid)}">${escapeHtml(rl)}</option>`; }).join("")}</select></div>`;
+    const saved = normalizeMatchingChoice(savedSelections[id]);
+
+    const menuOptions = right.map((r, j) => {
+      const rid = optionId(r, j);
+      const rl = optionLabel(r);
+      const selectedClass = rid === saved ? " selected" : "";
+      return `<button type="button" class="matching-choice-option${selectedClass}" data-value="${escapeHtml(rid)}">${escapeHtml(rl)}</button>`;
+    }).join("");
+
+    const selectedItem = right.find((r, j) => optionId(r, j) === saved);
+    const selectedLabel = selectedItem ? optionLabel(selectedItem) : "—";
+
+    return `
+      <div class="matching-row">
+        <div class="matching-subquestion">${escapeHtml(label)}</div>
+        <div class="matching-choice" data-id="${escapeHtml(id)}" data-value="${escapeHtml(saved)}">
+          <button type="button" class="matching-choice-trigger">
+            <span class="matching-choice-value">${escapeHtml(selectedLabel)}</span>
+            <span class="matching-choice-arrow">▾</span>
+          </button>
+          <div class="matching-choice-menu">${menuOptions}</div>
+        </div>
+      </div>`;
   }).join("") + `<button id="matching-btn" class="primary-btn" type="button">Перевірити</button><div id="matching-result"></div>`;
+
+  const closeMenus = (except = null) => {
+    container.querySelectorAll(".matching-choice.open").forEach(menu => {
+      if (menu !== except) menu.classList.remove("open");
+    });
+  };
+
+  container.querySelectorAll(".matching-choice").forEach(choice => {
+    const trigger = choice.querySelector(".matching-choice-trigger");
+    const valueEl = choice.querySelector(".matching-choice-value");
+
+    trigger.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const wasOpen = choice.classList.contains("open");
+      closeMenus(choice);
+      choice.classList.toggle("open", !wasOpen);
+    });
+
+    choice.querySelectorAll(".matching-choice-option").forEach(option => {
+      option.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const value = normalizeMatchingChoice(option.dataset.value);
+        choice.dataset.value = value;
+        valueEl.innerHTML = option.innerHTML;
+        choice.querySelectorAll(".matching-choice-option").forEach(o => o.classList.remove("selected"));
+        option.classList.add("selected");
+        choice.classList.remove("open");
+        renderMathIn(valueEl);
+      });
+    });
+
+    renderMathIn(valueEl);
+    choice.querySelectorAll(".matching-choice-option").forEach(option => renderMathIn(option));
+  });
 
   const resultEl = document.getElementById("matching-result");
   if (savedAnswer && savedAnswer.type === "matching") {
-    container.querySelectorAll(".matching-select").forEach(sel => {
-      const v = savedAnswer.selections ? savedAnswer.selections[sel.dataset.id] : null;
-      if (v != null) sel.value = v;
-    });
     resultEl.textContent = `Правильно: ${savedAnswer.correctCount} з ${savedAnswer.total}`;
   }
 
   document.getElementById("matching-btn").addEventListener("click", () => {
-    const selects = [...container.querySelectorAll(".matching-select")];
+    const choices = [...container.querySelectorAll(".matching-choice")];
     let correctCount = 0;
     const selections = {};
-    selects.forEach(sel => {
-      const key = sel.dataset.id;
-      selections[key] = sel.value;
-      const expected = correct[key] ?? correct[String(key)];
-      if (String(sel.value) === String(expected ?? "__never__")) correctCount++;
+
+    choices.forEach(choice => {
+      const key = String(choice.dataset.id);
+      const userValue = normalizeMatchingChoice(choice.dataset.value);
+      const expected = normalizeMatchingChoice(correct[key] ?? correct[String(key)]);
+      selections[key] = userValue;
+      if (userValue && expected && userValue === expected) correctCount++;
     });
-    const ok = correctCount === selects.length;
-    resultEl.textContent = `Правильно: ${correctCount} з ${selects.length}`;
-    recordAnswer(mode, { type: "matching", selections, correctCount, total: selects.length, correct: ok });
+
+    const ok = choices.length > 0 && correctCount === choices.length;
+    resultEl.textContent = `Правильно: ${correctCount} з ${choices.length}`;
+    recordAnswer(mode, {
+      type: "matching",
+      selections,
+      correctCount,
+      total: choices.length,
+      correct: ok
+    });
   });
 }
 
