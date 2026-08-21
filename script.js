@@ -183,13 +183,15 @@ finishSetupBtn.addEventListener("click", async () => {
    --------------------------------------------------------------------- */
 function renderDashboard() {
   if (!currentProfile) return;
-  const totalXp = currentProfile.xp || 0;
-  const level = Math.floor(totalXp / 100) + 1;
-  const expIntoLevel = totalXp % 100;
+  const totalXp = Math.max(0, Number(currentProfile.xp || 0));
+  const { level, currentLevelXp, nextLevelXp } = getLevelProgress(totalXp);
+  const expIntoLevel = totalXp - currentLevelXp;
+  const expNeeded = nextLevelXp - currentLevelXp;
+  const progressPct = Math.min(100, Math.max(0, (expIntoLevel / expNeeded) * 100));
 
   document.getElementById("level-title").textContent = `Рівень ${level}`;
-  document.getElementById("level-points").textContent = `${expIntoLevel}/100`;
-  document.getElementById("xp-fill").style.width = `${expIntoLevel}%`;
+  document.getElementById("level-points").textContent = `${expIntoLevel}/${expNeeded}`;
+  document.getElementById("xp-fill").style.width = `${progressPct}%`;
 
   ["math", "ukrainian", "history"].forEach(subj => {
     const score = currentProfile[`${subj}_score`];
@@ -331,6 +333,13 @@ let activeQuestionResults = [];
 let questionAnswers = []; // збережений вибір користувача по кожному питанню (можна змінювати до завершення сесії)
 let hintState = []; // скільки підказок вже відкрито по кожному питанню (session mode)
 let sessionTopicCounts = {};
+let questionStartedAt = null;
+let questionElapsedMs = [];
+let questionTimerInterval = null;
+let testStartedAt = null;
+let testRemainingMs = 60 * 60 * 1000;
+let testTimerInterval = null;
+let completedAnalytics = null;
 
 const NMT_COUNTS = { math: 22, ukrainian: 30, history: 30 };
 
@@ -497,6 +506,195 @@ function topicLabel(subject, key) {
   return found ? found.label : key || "Загальне";
 }
 
+
+/* ==================== РІВНІ ТА ТАЙМЕРИ ==================== */
+function getLevelProgress(totalXp) {
+  let level = 1;
+  let currentLevelXp = 0;
+  let nextLevelXp = 100;
+
+  while (totalXp >= nextLevelXp && level < 60) {
+    level += 1;
+    currentLevelXp = nextLevelXp;
+    nextLevelXp = currentLevelXp + 100 * Math.pow(2, level - 1);
+  }
+
+  return { level, currentLevelXp, nextLevelXp };
+}
+
+function formatTime(ms) {
+  const sec = Math.max(0, Math.round(ms / 1000));
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+/*
+ * Рекомендований час із таблиці користувача.
+ * Для навчальної сесії нумерація йде від 1 у межах поточної сесії.
+ * Для пробного тесту — від 1 до стандартної кількості завдань предмета.
+ */
+const TIME_LIMITS = {
+  ukrainian: [
+    { from: 1, to: 25, sec: 45 },
+    { from: 26, to: 30, sec: 120 }
+  ],
+  math: [
+    { from: 1, to: 15, sec: 120 },
+    { from: 16, to: 18, sec: 180 },
+    { from: 19, to: 22, sec: 330 }
+  ],
+  history: [
+    { from: 1, to: 20, sec: 48 },
+    { from: 21, to: 24, sec: 120 },
+    { from: 25, to: 27, sec: 150 },
+    { from: 28, to: 30, sec: 150 }
+  ]
+};
+
+function getRecommendedSeconds(subject, questionNumber) {
+  const band = (TIME_LIMITS[subject] || []).find(x => questionNumber >= x.from && questionNumber <= x.to);
+  return band ? band.sec : 120;
+}
+
+function getCurrentQuestionTimerElement() {
+  return document.getElementById(activeMode === "test" ? "test-question-timer" : "session-question-timer");
+}
+
+function startQuestionTimer() {
+  stopQuestionTimer();
+  questionStartedAt = performance.now();
+  const el = getCurrentQuestionTimerElement();
+  if (!el) return;
+
+  const render = () => {
+    const elapsed = (performance.now() - questionStartedAt) + (questionElapsedMs[currentQuestionIndex] || 0);
+    el.textContent = formatTime(elapsed);
+  };
+
+  render();
+  questionTimerInterval = setInterval(render, 250);
+}
+
+function stopQuestionTimer() {
+  if (questionTimerInterval) {
+    clearInterval(questionTimerInterval);
+    questionTimerInterval = null;
+  }
+}
+
+function commitCurrentQuestionTime() {
+  if (questionStartedAt == null) return;
+  const elapsed = Math.max(0, performance.now() - questionStartedAt);
+  questionElapsedMs[currentQuestionIndex] = (questionElapsedMs[currentQuestionIndex] || 0) + elapsed;
+  questionStartedAt = performance.now();
+}
+
+function startTestOverallTimer() {
+  clearInterval(testTimerInterval);
+  testRemainingMs = 60 * 60 * 1000;
+  const el = document.getElementById("test-total-timer");
+  const render = () => {
+    if (!el) return;
+    el.textContent = formatTime(testRemainingMs);
+    el.classList.toggle("is-warning", testRemainingMs <= 5 * 60 * 1000);
+  };
+  render();
+
+  testTimerInterval = setInterval(() => {
+    testRemainingMs -= 250;
+    render();
+
+    if (testRemainingMs <= 0) {
+      clearInterval(testTimerInterval);
+      testTimerInterval = null;
+      finishTrialTest(true);
+    }
+  }, 250);
+}
+
+function stopAllTimers() {
+  stopQuestionTimer();
+  clearInterval(testTimerInterval);
+  testTimerInterval = null;
+  testRemainingMs = 60 * 60 * 1000;
+}
+
+function buildCompletedAnalytics(mode, subject) {
+  const times = activeQuestions.map((_, i) => Math.max(0, Math.round(questionElapsedMs[i] || 0)));
+  const totalTime = times.reduce((sum, value) => sum + value, 0);
+  const totalQuestions = activeQuestions.length;
+  const correct = tallyResults();
+
+  return {
+    mode,
+    subject,
+    totalQuestions,
+    correct,
+    accuracy: totalQuestions ? Math.round((correct / totalQuestions) * 100) : 0,
+    averageMs: totalQuestions ? totalTime / totalQuestions : 0,
+    totalTime,
+    overallLimitMs: mode === "test" ? 60 * 60 * 1000 : null,
+    questions: activeQuestions.map((q, i) => ({
+      number: i + 1,
+      topic: q.topic,
+      questionType: q.question_type,
+      timeMs: times[i],
+      limitSec: getRecommendedSeconds(subject, i + 1),
+      correct: !!(questionAnswers[i] && questionAnswers[i].correct)
+    }))
+  };
+}
+
+function renderCompletedAnalytics() {
+  if (!completedAnalytics) return;
+
+  const data = completedAnalytics;
+  document.getElementById("result-mode-badge").textContent = data.mode === "test" ? "Пробний тест" : "Навчальна сесія";
+  document.getElementById("result-subtitle").textContent =
+    `${SUBJECTS_META[data.subject]?.label || data.subject} · деталізація темпу по кожному питанню`;
+
+  document.getElementById("result-accuracy").textContent = `${data.accuracy}%`;
+  document.getElementById("result-score-line").textContent = `${data.correct} з ${data.totalQuestions} правильних`;
+  document.getElementById("result-avg-time").textContent = formatTime(data.averageMs);
+  document.getElementById("result-time-line").textContent = "Середнє за всіма питаннями";
+  document.getElementById("result-total-time").textContent = formatTime(data.totalTime);
+  document.getElementById("result-total-limit").textContent =
+    data.overallLimitMs ? `Ліміт: ${formatTime(data.overallLimitMs)}` : "Ліміт: не враховується";
+
+  const host = document.getElementById("result-questions-list");
+  host.innerHTML = data.questions.map(item => {
+    const limitMs = item.limitSec * 1000;
+    const ratio = limitMs > 0 ? item.timeMs / limitMs : 0;
+    const fillPct = Math.min(100, Math.round(ratio * 100));
+    const good = item.timeMs <= limitMs;
+    const status = good ? "Відмінно, ти легенда! 🔥" : "дуже повільно!!(((";
+    const statusClass = good ? "good" : "slow";
+
+    return `
+      <div class="result-question-row">
+        <div class="result-q-meta">
+          <div>
+            <strong>Питання ${item.number}</strong>
+            <span class="result-q-topic">${escapeHtml(topicLabel(data.subject, item.topic))}</span>
+          </div>
+          <div class="result-q-time">${formatTime(item.timeMs)}</div>
+        </div>
+        <div class="result-scale">
+          <div class="result-scale-fill ${statusClass}" style="width:${fillPct}%"></div>
+          <span class="result-scale-limit">${formatTime(limitMs)} ліміт</span>
+        </div>
+        <div class="result-q-footer">
+          <span class="result-q-status ${statusClass}">${status}</span>
+          <span class="result-q-limit-note">Рекомендовано: ${formatTime(limitMs)}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  showScreen("screen-result");
+}
+
 function openSessionSetup() {
   const subjectOptions = Object.entries(SUBJECTS_META)
     .map(([key, meta]) => `<option value="${key}">${meta.label}</option>`).join("");
@@ -578,6 +776,8 @@ function openSessionSetup() {
     activeQuestionResults = [];
     questionAnswers = new Array(questions.length).fill(null);
     hintState = new Array(questions.length).fill(0);
+    questionElapsedMs = new Array(questions.length).fill(0);
+    completedAnalytics = null;
     closeModal();
     showScreen("screen-session");
     renderQuestion("session");
@@ -619,9 +819,12 @@ function openTrialTestSetup() {
     correctAnswersCount = 0;
     activeQuestionResults = [];
     questionAnswers = new Array(questions.length).fill(null);
+    questionElapsedMs = new Array(questions.length).fill(0);
+    completedAnalytics = null;
     setTimeout(() => {
       closeModal();
       showScreen("screen-test");
+      startTestOverallTimer();
       renderQuestion("test");
     }, 250);
   });
@@ -655,6 +858,7 @@ function renderQuestion(mode) {
   const progress = ((currentQuestionIndex + 1) / total) * 100;
   document.getElementById(`${prefix}-progress-label`).textContent = `Питання ${currentQuestionIndex + 1} з ${total}`;
   document.getElementById(`${prefix}-progress-fill`).style.width = `${progress}%`;
+  startQuestionTimer();
   document.getElementById(`${prefix}-topic-label`).textContent = mode === "test" ? topicLabel(activeSubject, q.topic) : topicLabel(activeSubject, q.topic);
   document.getElementById(`${prefix}-question-text`).innerHTML = escapeHtml(q.question_text).replace(/\n/g, "<br>");
 
@@ -847,12 +1051,14 @@ function renderTableQuestion(q, container, mode, savedAnswer) {
 
 function advanceQuestion(mode) {
   if (currentQuestionIndex >= activeQuestions.length - 1) return;
+  commitCurrentQuestionTime();
   currentQuestionIndex++;
   renderQuestion(mode);
 }
 
 function goToPreviousQuestion(mode) {
   if (currentQuestionIndex <= 0) return;
+  commitCurrentQuestionTime();
   currentQuestionIndex--;
   renderQuestion(mode);
 }
@@ -889,15 +1095,20 @@ function tallyRawScore() {
 }
 
 async function finishLearningSession() {
+  commitCurrentQuestionTime();
   correctAnswersCount = tallyResults();
+
   const expGained = correctAnswersCount * 10;
   const newXp = (currentProfile.xp || 0) + expGained;
+  const levelProgress = getLevelProgress(newXp);
+
   const updates = {
     xp: newXp,
-    level: Math.floor(newXp / 100) + 1,
+    level: levelProgress.level,
     [`${activeSubject}_questions`]: (currentProfile[`${activeSubject}_questions`] || 0) + activeQuestions.length,
     [`${activeSubject}_correct`]: (currentProfile[`${activeSubject}_correct`] || 0) + correctAnswersCount
   };
+
   const topicProgress = { ...(currentProfile.topic_progress || {}) };
   activeQuestions.forEach(q => {
     const key = `${activeSubject}:${q.topic}`;
@@ -907,11 +1118,18 @@ async function finishLearningSession() {
 
   const { data, error } = await supabaseClient.from("profiles").update(updates).eq("id", currentUser.id).select().single();
   if (error) throw error;
+
   currentProfile = data;
   leaderboardCache = null;
+  completedAnalytics = buildCompletedAnalytics("session", activeSubject);
+
+  stopAllTimers();
   renderDashboard();
-  alert(`Сесію завершено! Правильних відповідей: ${correctAnswersCount} з ${activeQuestions.length}. Нараховано ${expGained} XP.`);
-  showScreen("screen-dashboard");
+  renderCompletedAnalytics();
+
+  /* Времена активной сессії більше не зберігаємо. */
+  questionElapsedMs = [];
+  questionStartedAt = null;
 }
 
 /* Офіційні таблиці переведення тестового бала НМТ 2026 у шкалу 100–200
@@ -954,23 +1172,32 @@ function lookupNmtScore(subject, raw) {
   return result;
 }
 
-async function finishTrialTest() {
+async function finishTrialTest(autoFinished = false) {
+  commitCurrentQuestionTime();
   correctAnswersCount = tallyResults();
+
   const { raw, max } = tallyRawScore();
   const score = lookupNmtScore(activeSubject, raw);
   const history = Array.isArray(currentProfile[`${activeSubject}_history`]) ? [...currentProfile[`${activeSubject}_history`]] : [];
   history.push(score ?? 0);
+
   const { data, error } = await supabaseClient.from("profiles").update({
     [`${activeSubject}_history`]: history,
     [`${activeSubject}_score`]: score
   }).eq("id", currentUser.id).select().single();
+
   if (error) throw error;
+
   currentProfile = data;
   leaderboardCache = null;
+  completedAnalytics = buildCompletedAnalytics("test", activeSubject);
+
+  stopAllTimers();
   renderDashboard();
-  const scoreLine = score != null ? `Результат: ${score}/200 (${raw} з ${max} тестових балів).` : `Поки що нижче порогу проходження (${raw} з ${max} тестових балів) — рейтинговий бал не нараховується.`;
-  alert(`Пробний тест завершено! Правильних відповідей: ${correctAnswersCount} з ${activeQuestions.length}. ${scoreLine}`);
-  showScreen("screen-dashboard");
+  renderCompletedAnalytics();
+
+  questionElapsedMs = [];
+  questionStartedAt = null;
 }
 
 document.getElementById("btn-session").addEventListener("click", openSessionSetup);
@@ -985,8 +1212,17 @@ document.getElementById("session-finish-btn").addEventListener("click", async ()
 document.getElementById("test-finish-btn").addEventListener("click", async () => {
   try { await finishTrialTest(); } catch (e) { alert("Помилка збереження результату тесту: " + e.message); }
 });
-document.getElementById("session-exit-btn").addEventListener("click", () => showScreen("screen-dashboard"));
-document.getElementById("test-exit-btn").addEventListener("click", () => showScreen("screen-dashboard"));
+document.getElementById("session-exit-btn").addEventListener("click", () => {
+  stopAllTimers();
+  questionElapsedMs = [];
+  showScreen("screen-dashboard");
+});
+document.getElementById("test-exit-btn").addEventListener("click", () => {
+  stopAllTimers();
+  questionElapsedMs = [];
+  showScreen("screen-dashboard");
+});
+document.getElementById("result-back-btn").addEventListener("click", () => showScreen("screen-dashboard"));
 
 /* ---------------------------------------------------------------------
    НАВІГАЦІЯ

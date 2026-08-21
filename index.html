@@ -236,7 +236,10 @@
           <div id="session-progress-label" class="session-progress-text">Питання 1 з 10</div>
           <div class="level-bar"><div id="session-progress-fill" class="level-fill" style="width: 10%;"></div></div>
         </div>
-        <span id="session-topic-label" class="session-topic-badge">Тема</span>
+        <div class="top-timer-wrap">
+          <span id="session-topic-label" class="session-topic-badge">Тема</span>
+          <span id="session-question-timer" class="question-timer">0:00</span>
+        </div>
       </div>
 
       <div class="session-layout">
@@ -261,7 +264,53 @@
     </div>
   </div>
 
-  <!-- ЕКРАН 5: ПРОБНИЙ ТЕСТ -->
+  <!-- ЕКРАН 5: РЕЗУЛЬТАТ СЕСІЇ / ТЕСТУ -->
+  <div id="screen-result" class="screen">
+    <div class="result-shell">
+      <header class="result-header">
+        <div>
+          <div id="result-mode-badge" class="result-mode-badge">Навчальна сесія</div>
+          <h1>Результати та аналітика</h1>
+          <p id="result-subtitle">Розбір вашого темпу виконання.</p>
+        </div>
+        <button id="result-back-btn" class="secondary-btn" type="button">На головну</button>
+      </header>
+
+      <div class="result-summary-grid">
+        <div class="result-stat-card">
+          <span>Точність</span>
+          <strong id="result-accuracy">0%</strong>
+          <small id="result-score-line">0 з 0 правильних</small>
+        </div>
+        <div class="result-stat-card">
+          <span>Середній час на питання</span>
+          <strong id="result-avg-time">0:00</strong>
+          <small id="result-time-line">За всіма питаннями</small>
+        </div>
+        <div class="result-stat-card">
+          <span>Загальний час</span>
+          <strong id="result-total-time">0:00</strong>
+          <small id="result-total-limit">Ліміт: —</small>
+        </div>
+      </div>
+
+      <div class="card result-question-card">
+        <div class="result-section-head">
+          <div>
+            <h2>Час на кожне питання</h2>
+            <p>Шкала заповнюється відносно рекомендованого часу саме для цього завдання.</p>
+          </div>
+          <div class="result-legend">
+            <span><i class="legend-swatch legend-good"></i>В нормі</span>
+            <span><i class="legend-swatch legend-slow"></i>Повільно</span>
+          </div>
+        </div>
+        <div id="result-questions-list" class="result-questions-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ЕКРАН 6: ПРОБНИЙ ТЕСТ -->
   <div id="screen-test" class="screen">
     <div class="session-box">
       <div class="session-top-bar">
@@ -270,7 +319,11 @@
           <div id="test-progress-label" class="session-progress-text">Питання 1</div>
           <div class="level-bar"><div id="test-progress-fill" class="level-fill" style="width: 0%;"></div></div>
         </div>
-        <span id="test-topic-label" class="session-topic-badge">Пробний тест</span>
+        <div class="top-timer-wrap">
+          <span id="test-topic-label" class="session-topic-badge">Пробний тест</span>
+          <span id="test-question-timer" class="question-timer test-embedded-timer">0:00</span>
+          <span id="test-total-timer" class="test-total-timer">60:00</span>
+        </div>
       </div>
       <div class="card session-card-main">
         <p id="test-question-text" class="session-q-text">Завантаження питання...</p>
