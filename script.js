@@ -405,6 +405,7 @@ function normalizeQuestion(row, subject, topicKey) {
 
   return {
     id: row.id,
+    exam_position: row.exam_position ?? row.nmt_number ?? row.question_number ?? row.task_number ?? row.position ?? row.order ?? row.number ?? null,
     subject,
     topic: row.topic || topicKey,
     question_type: type,
@@ -531,8 +532,8 @@ function formatTime(ms) {
 
 /*
  * Рекомендований час із таблиці користувача.
- * Для навчальної сесії нумерація йде від 1 у межах поточної сесії.
- * Для пробного тесту — від 1 до стандартної кількості завдань предмета.
+ * Для НМТ використовуємо реальний exam_position, якщо він є в рядку БД.
+ * У навчальній сесії, де питання перемішані, запасний варіант — тип завдання.
  */
 const TIME_LIMITS = {
   ukrainian: [
@@ -552,17 +553,59 @@ const TIME_LIMITS = {
   ]
 };
 
-function getRecommendedSeconds(subject, questionNumber) {
-  const band = (TIME_LIMITS[subject] || []).find(x => questionNumber >= x.from && questionNumber <= x.to);
-  return band ? band.sec : 120;
+function getRecommendedSeconds(subject, questionNumber, question = null) {
+  // Якщо в БД є справжній номер завдання НМТ — використовуємо його.
+  // Для навчальної сесії, де питання перемішані, орієнтуємося на тип завдання.
+  const examPosition = question?.exam_position;
+  if (Number.isFinite(Number(examPosition)) && Number(examPosition) > 0) {
+    const band = (TIME_LIMITS[subject] || []).find(x => Number(examPosition) >= x.from && Number(examPosition) <= x.to);
+    if (band) return band.sec;
+  }
+
+  const type = String(question?.question_type || "single_choice").toLowerCase();
+  const is = (...names) => names.includes(type);
+
+  if (subject === "ukrainian") {
+    if (is("matching", "correspondence", "matching_question")) return 120;
+    return 45; // середина рекомендованого діапазону 35–50 с
+  }
+
+  if (subject === "math") {
+    if (is("matching", "correspondence", "matching_question")) return 180;
+    if (is("short_answer", "short", "open", "open_answer")) return 330; // середина 5–6 хв
+    return 120;
+  }
+
+  if (subject === "history") {
+    if (is("matching", "correspondence", "matching_question")) return 120;
+    if (is("sequence", "ordering", "order", "multiple_choice", "multi_choice", "multiple", "table")) return 150;
+    return 48; // середина рекомендованого діапазону 45–50 с
+  }
+
+  return 120;
 }
 
 function getCurrentQuestionTimerElement() {
   return document.getElementById(activeMode === "test" ? "test-question-timer" : "session-question-timer");
 }
 
+function renderCurrentQuestionTimer() {
+  const el = getCurrentQuestionTimerElement();
+  if (!el) return;
+  el.textContent = formatTime(questionElapsedMs[currentQuestionIndex] || 0);
+}
+
 function startQuestionTimer() {
   stopQuestionTimer();
+
+  // Отвеченное задание считается завершённым. При возврате его таймер
+  // остаётся замороженным и больше не продолжает отсчёт.
+  if (questionAnswers[currentQuestionIndex]) {
+    questionStartedAt = null;
+    renderCurrentQuestionTimer();
+    return;
+  }
+
   questionStartedAt = performance.now();
   const el = getCurrentQuestionTimerElement();
   if (!el) return;
@@ -584,10 +627,16 @@ function stopQuestionTimer() {
 }
 
 function commitCurrentQuestionTime() {
-  if (questionStartedAt == null) return;
+  if (questionStartedAt == null) {
+    renderCurrentQuestionTimer();
+    return;
+  }
+
   const elapsed = Math.max(0, performance.now() - questionStartedAt);
   questionElapsedMs[currentQuestionIndex] = (questionElapsedMs[currentQuestionIndex] || 0) + elapsed;
-  questionStartedAt = performance.now();
+  questionStartedAt = null;
+  stopQuestionTimer();
+  renderCurrentQuestionTimer();
 }
 
 function startTestOverallTimer() {
@@ -640,7 +689,7 @@ function buildCompletedAnalytics(mode, subject) {
       topic: q.topic,
       questionType: q.question_type,
       timeMs: times[i],
-      limitSec: getRecommendedSeconds(subject, i + 1),
+      limitSec: getRecommendedSeconds(subject, i + 1, q),
       correct: !!(questionAnswers[i] && questionAnswers[i].correct)
     }))
   };
@@ -660,7 +709,7 @@ function renderCompletedAnalytics() {
   document.getElementById("result-time-line").textContent = "Середнє за всіма питаннями";
   document.getElementById("result-total-time").textContent = formatTime(data.totalTime);
   document.getElementById("result-total-limit").textContent =
-    data.overallLimitMs ? `Ліміт: ${formatTime(data.overallLimitMs)}` : "Ліміт: не враховується";
+    data.overallLimitMs ? `Загальний час тесту: ${formatTime(data.overallLimitMs)}` : "";
 
   const host = document.getElementById("result-questions-list");
   host.innerHTML = data.questions.map(item => {
@@ -682,7 +731,7 @@ function renderCompletedAnalytics() {
         </div>
         <div class="result-scale">
           <div class="result-scale-fill ${statusClass}" style="width:${fillPct}%"></div>
-          <span class="result-scale-limit">${formatTime(limitMs)} ліміт</span>
+          <span class="result-scale-limit">Рекомендовано: ${formatTime(limitMs)}</span>
         </div>
         <div class="result-q-footer">
           <span class="result-q-status ${statusClass}">${status}</span>
@@ -956,6 +1005,7 @@ function renderSingleChoiceQuestion(q, container, mode, savedAnswer) {
       el.classList.add("selected");
       const correct = isSingleChoiceCorrect(q, index, text);
       recordAnswer(mode, { type: "single", selectedIndex: index, correct });
+      commitCurrentQuestionTime();
     });
     container.appendChild(el);
   });
@@ -983,6 +1033,7 @@ function renderShortAnswerQuestion(q, container, mode, savedAnswer) {
     resultEl.textContent = correct ? "Правильно" : `Неправильно. Правильна відповідь: ${expected}`;
     renderMathIn(resultEl);
     recordAnswer(mode, { type: "short", value, expected, correct });
+    commitCurrentQuestionTime();
   });
 }
 
@@ -1022,6 +1073,7 @@ function renderMatchingQuestion(q, container, mode, savedAnswer) {
     const ok = correctCount === selects.length;
     resultEl.textContent = `Правильно: ${correctCount} з ${selects.length}`;
     recordAnswer(mode, { type: "matching", selections, correctCount, total: selects.length, correct: ok });
+    commitCurrentQuestionTime();
   });
 }
 
@@ -1046,11 +1098,15 @@ function renderTableQuestion(q, container, mode, savedAnswer) {
     const ok = value.toLowerCase() === expected.toLowerCase();
     resultEl.textContent = ok ? "Правильно" : `Неправильно. Правильна відповідь: ${expected}`;
     recordAnswer(mode, { type: "table", value, expected, correct: ok });
+    commitCurrentQuestionTime();
   });
 }
 
 function advanceQuestion(mode) {
   if (currentQuestionIndex >= activeQuestions.length - 1) return;
+  // Фиксируем время текущего вопроса. Если ответа нет — при возврате
+  // таймер продолжится с накопленного значения. Если ответ есть — таймер
+  // уже остановлен в момент ответа и при возврате не запустится.
   commitCurrentQuestionTime();
   currentQuestionIndex++;
   renderQuestion(mode);
