@@ -1233,10 +1233,25 @@ function renderShortAnswerQuestion(q, container, mode, savedAnswer) {
   document.getElementById("short-answer-btn").addEventListener("click", () => {
     const value = input.value.trim();
     if (!value) return;
-    const c = getQuestionCorrect(q);
-    const expected = String(c.value ?? c.option ?? "").trim();
-    const correct = value.toLowerCase() === expected.toLowerCase();
-    resultEl.textContent = correct ? "Правильно" : `Неправильно. Правильна відповідь: ${expected}`;
+    // Для short_answer правильний ответ ВСЕГДА берём напрямую из колонки
+    // short_answer текущего вопроса. Не полагаемся на correct_answer/right_answer.
+    const expected = String(q.short_answer ?? "").trim();
+
+    if (!expected) {
+      resultEl.textContent = "Неможливо перевірити: правильна відповідь не заповнена.";
+      return;
+    }
+
+    const normalizeShortAnswer = (text) => String(text ?? "")
+      .trim()
+      .replace(/\\s+/g, " ")
+      .toLowerCase();
+
+    const correct = normalizeShortAnswer(value) === normalizeShortAnswer(expected);
+
+    resultEl.textContent = correct
+      ? "Правильно"
+      : `Неправильно. Правильна відповідь: ${expected}`;
     renderMathIn(resultEl);
     recordAnswer(mode, { type: "short", value, expected, correct });
   });
