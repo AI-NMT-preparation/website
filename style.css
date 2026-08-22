@@ -3165,26 +3165,30 @@ body {
 }
 
 /* ============================================================
-   BOLEST.AI — МОБІЛЬНА АДАПТАЦІЯ ГРАФІКА АНАЛІТИКИ
-   SVG графік повинен повністю вміщатися на вузькому екрані,
-   без горизонтального обрізання або прокручування сторінки.
+   BOLEST.AI — МОБІЛЬНИЙ ГОРИЗОНТАЛЬНИЙ СКРОЛ ГРАФІКА
+   На вузькому екрані графік зберігає свою ширину, а користувач
+   може гортати його пальцем вліво/вправо всередині картки.
    ============================================================ */
 @media (max-width: 820px) {
   #view-analytics .chart-container {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    overflow: hidden !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-x: contain !important;
+    touch-action: pan-x !important;
+    scrollbar-width: thin !important;
   }
 
   #view-analytics #analytics-chart {
     display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    height: auto !important;
-    aspect-ratio: 640 / 280 !important;
-    box-sizing: border-box !important;
+    width: 640px !important;
+    min-width: 640px !important;
+    max-width: none !important;
+    height: 280px !important;
+    aspect-ratio: auto !important;
   }
 }
 
@@ -3192,11 +3196,42 @@ body {
   #view-analytics .chart-container {
     margin-left: 0 !important;
     margin-right: 0 !important;
+    border-radius: var(--radius-md) !important;
+  }
+}
+
+/* ============================================================
+   QUESTION IMAGE — изображение самого задания
+   image_question показывается после текста задания и перед вариантами.
+   ============================================================ */
+.question-image-wrap {
+  width: 100%;
+  margin: 0 0 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+}
+
+.question-image {
+  display: block;
+  width: 100%;
+  max-width: 820px;
+  max-height: 560px;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+@media (max-width: 700px) {
+  .question-image-wrap {
+    margin-bottom: 14px;
+    border-radius: 8px;
   }
 
-  #view-analytics #analytics-chart {
-    width: 100% !important;
-    height: auto !important;
-    aspect-ratio: 640 / 280 !important;
+  .question-image {
+    max-height: 420px;
   }
 }

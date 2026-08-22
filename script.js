@@ -527,6 +527,7 @@ function normalizeQuestion(row, subject, topicKey) {
     topic: row.topic || topicKey,
     question_type: type,
     question_text: row.question_text || row.question || '',
+    image_question: row.image_question ?? null,
     image_path: row.image_path || null,
     options,
     short_answer: row.short_answer ?? null,
@@ -1055,6 +1056,34 @@ function isSingleChoiceCorrect(q, index, value) {
   return false;
 }
 
+// Зображення самого завдання (не підказка).
+// image_question може містити повний URL, data:image/... або шлях у Supabase Storage.
+const QUESTION_IMAGE_BUCKET = "question-images";
+
+function resolveQuestionImageSrc(value) {
+  if (value == null) return "";
+  const raw = String(value).trim();
+  if (!raw) return "";
+
+  if (/^(https?:|data:image\/|blob:)/i.test(raw)) return raw;
+
+  // storage://bucket/path
+  if (raw.startsWith("storage://")) {
+    const rest = raw.slice("storage://".length);
+    const slash = rest.indexOf("/");
+    if (slash > 0) {
+      const bucket = rest.slice(0, slash);
+      const path = rest.slice(slash + 1);
+      const { data } = supabaseClient.storage.from(bucket).getPublicUrl(path);
+      return data?.publicUrl || "";
+    }
+  }
+
+  // Если в БД хранится только путь, используем bucket question-images.
+  const { data } = supabaseClient.storage.from(QUESTION_IMAGE_BUCKET).getPublicUrl(raw.replace(/^\/+/, ""));
+  return data?.publicUrl || raw;
+}
+
 function renderQuestion(mode) {
   const q = activeQuestions[currentQuestionIndex];
   const prefix = mode === "test" ? "test" : "session";
@@ -1067,7 +1096,11 @@ function renderQuestion(mode) {
   document.getElementById(`${prefix}-question-text`).innerHTML = escapeHtml(q.question_text).replace(/\n/g, "<br>");
 
   const image = document.getElementById(`${prefix}-image`);
-  image.innerHTML = q.image_path ? `<img class="question-image" src="${escapeHtml(q.image_path)}" alt="Ілюстрація до питання">` : "";
+  const rawQuestionImage = q.image_question ?? q.image_path ?? "";
+  const questionImageSrc = resolveQuestionImageSrc(rawQuestionImage);
+  image.innerHTML = questionImageSrc
+    ? `<div class="question-image-wrap"><img class="question-image" src="${escapeHtml(questionImageSrc)}" alt="Зображення до завдання" loading="lazy"></div>`
+    : "";
 
   const options = document.getElementById(`${prefix}-options`);
   options.innerHTML = "";
