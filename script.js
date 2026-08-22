@@ -485,12 +485,35 @@ function normalizeQuestion(row, subject, topicKey) {
       .filter(v => v != null && String(v).trim() !== '');
   }
 
-  let correct = parseJson(row.correct_answer, null);
-  if (!correct || (typeof correct === 'object' && Object.keys(correct).length === 0)) {
-    correct = normalizeCorrect(row.right_answer);
+  /*
+   * Тип питання визначається ТІЛЬКИ через question_type після нормалізації.
+   * Для short_answer правильну відповідь беремо з окремої колонки БД:
+   *     short_answer
+   * Це має пріоритет над correct_answer / right_answer.
+   */
+  let correct = null;
+
+  if (type === 'short_answer') {
+    const shortAnswer = row.short_answer;
+    if (shortAnswer != null && String(shortAnswer).trim() !== '') {
+      correct = { value: String(shortAnswer).trim() };
+    } else {
+      // Запасний варіант для старих рядків, де short_answer ще не заповнена.
+      const fallback = parseJson(row.correct_answer, null);
+      if (fallback && !(typeof fallback === 'object' && Object.keys(fallback).length === 0)) {
+        correct = fallback;
+      } else if (row.right_answer != null && String(row.right_answer).trim() !== '') {
+        correct = normalizeCorrect(row.right_answer);
+      }
+    }
+  } else {
+    correct = parseJson(row.correct_answer, null);
+    if (!correct || (typeof correct === 'object' && Object.keys(correct).length === 0)) {
+      correct = normalizeCorrect(row.right_answer);
+    }
+    if (!correct && row.correct_option != null) correct = normalizeCorrect(row.correct_option);
+    if (!correct && row.correct_index != null) correct = { index: Number(row.correct_index) };
   }
-  if (!correct && row.correct_option != null) correct = normalizeCorrect(row.correct_option);
-  if (!correct && row.correct_index != null) correct = { index: Number(row.correct_index) };
 
   const matching = buildMatchingData(row, options);
   if (type === 'matching' && matching.left.length && matching.right.length) {
@@ -506,6 +529,7 @@ function normalizeQuestion(row, subject, topicKey) {
     question_text: row.question_text || row.question || '',
     image_path: row.image_path || null,
     options,
+    short_answer: row.short_answer ?? null,
     correct_answer: correct || {},
     matching_left: matching.left,
     matching_right: matching.right,
